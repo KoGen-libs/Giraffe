@@ -98,7 +98,11 @@
       "Bash(gh api *)",
       "Bash(./gradlew :giraffe:tasks --group publishing --console=plain)",
       "Bash(./gradlew :giraffe:publish -Pversion=0.0.0-test --console=plain)",
-      "Bash(cd *)"
+      "Bash(cd *)",
+      "Bash(./gradlew :giraffe:assembleDebug :app:assembleDebug :giraffe:publish -Pversion=0.0.0-test --console=plain)",
+      "Bash(grep -iE \"\\\\.kt$|\\\\.proto$\")",
+      "Bash(grep -iE '\\\\.kt$|\\\\.proto$')",
+      "Bash(./gradlew :giraffe:testDebugUnitTest --tests \"com.kogen.giraffe.analizer.parsers.GiraffePdfParserTest\" --console=plain)"
     ]
   }
 }

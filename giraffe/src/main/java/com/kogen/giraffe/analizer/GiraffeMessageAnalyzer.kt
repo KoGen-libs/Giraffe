@@ -6,6 +6,7 @@ import com.google.protobuf.MessageLite
 import com.kogen.giraffe.analizer.parsers.ContentParser
 import com.kogen.giraffe.analizer.parsers.GiraffeAudioParser
 import com.kogen.giraffe.analizer.parsers.GiraffeImageParser
+import com.kogen.giraffe.analizer.parsers.GiraffePdfParser
 import com.kogen.giraffe.analizer.parsers.GiraffeUnknownBinaryParser
 import com.kogen.giraffe.analizer.parsers.GiraffeVideoParser
 import com.kogen.giraffe.analizer.parsers.ParserResult
@@ -35,6 +36,7 @@ class GiraffeMessageAnalyzer(
             GiraffeImageParser(),
             GiraffeAudioParser(),
             GiraffeVideoParser(),
+            GiraffePdfParser(),
             GiraffeUnknownBinaryParser(),
         )
 

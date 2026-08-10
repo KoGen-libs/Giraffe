@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import com.kogen.giraffe.di.koGenViewModel
 import com.kogen.giraffe.navigation.ActionToImagePreview
+import com.kogen.giraffe.navigation.ActionToPdfPreview
 import com.kogen.giraffe.navigation.ActionToVideoPreview
 import com.kogen.giraffe.navigation.navigateSafety
 import com.kogen.giraffe.navigation.popBackSafety
@@ -36,6 +37,9 @@ fun ChatDetailsContainer(
                 }
                 is ChatDetailsEffect.ShowVideo -> {
                     navController.navigateSafety(ActionToVideoPreview(Uri.encode(it.filePath)))
+                }
+                is ChatDetailsEffect.ShowPdf -> {
+                    navController.navigateSafety(ActionToPdfPreview(Uri.encode(it.filePath)))
                 }
             }
         },

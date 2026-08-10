@@ -11,5 +11,6 @@ enum class GiraffeContentType {
     Image,
     Audio,
     Video,
+    Pdf,
     Unknown,
 }

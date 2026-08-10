@@ -89,6 +89,19 @@ class ProtoWireScannerTest {
     }
 
     @Test
+    fun `findBinaryLeaves does not skip a plain-ASCII PDF the way it would skip ordinary text`() {
+        // A minimal, uncompressed PDF is otherwise indistinguishable from ordinary text - this is
+        // the one deliberate exception to the "ignores plain UTF-8 text" rule above.
+        val pdf = "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n".toByteArray()
+        val message = lengthDelimitedField(fieldNumber = 7, payload = pdf)
+
+        val leaves = scanner.findBinaryLeaves(message)
+
+        assertThat(leaves).hasSize(1)
+        assertThat(leaves[0]).isEqualTo(pdf)
+    }
+
+    @Test
     fun `findBinaryLeaves falls back to the raw payload when a noise run parses as an empty message`() {
         // A long run of zero bytes parses "validly" as a chain of empty wireType=0 fields, but
         // carries zero real (wireType=2) bytes, so it must NOT be discarded as a nested message.
