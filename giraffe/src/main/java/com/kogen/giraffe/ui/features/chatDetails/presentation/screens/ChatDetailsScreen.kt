@@ -362,11 +362,26 @@ private fun ServerMessageView(
                         )
                     }
 
+                    GiraffeContentType.Pdf -> {
+                        Spacer(Modifier.height(4.dp))
+                        FileChipView(
+                            label = "PDF document",
+                            trailingIcon = R.drawable.ic_chevron_down,
+                            trailingIconRotation = -90f,
+                            onClick = {
+                                action(ChatDetailsAction.ShowPdf(message.filePath))
+                            },
+                        )
+                    }
+
                     GiraffeContentType.Unknown -> {
                         Spacer(Modifier.height(4.dp))
-                        UnknownFileView(
-                            filePath = message.filePath,
-                            context = context,
+                        FileChipView(
+                            label = "Unknown file",
+                            trailingIcon = R.drawable.ic_share,
+                            onClick = {
+                                File(message.filePath).shareFile(context)
+                            },
                         )
                     }
 
@@ -486,11 +501,26 @@ private fun ClientMessageView(
                         )
                     }
 
+                    GiraffeContentType.Pdf -> {
+                        Spacer(Modifier.height(4.dp))
+                        FileChipView(
+                            label = "PDF document",
+                            trailingIcon = R.drawable.ic_chevron_down,
+                            trailingIconRotation = -90f,
+                            onClick = {
+                                action(ChatDetailsAction.ShowPdf(message.filePath))
+                            },
+                        )
+                    }
+
                     GiraffeContentType.Unknown -> {
                         Spacer(Modifier.height(4.dp))
-                        UnknownFileView(
-                            filePath = message.filePath,
-                            context = context,
+                        FileChipView(
+                            label = "Unknown file",
+                            trailingIcon = R.drawable.ic_share,
+                            onClick = {
+                                File(message.filePath).shareFile(context)
+                            },
                         )
                     }
 
@@ -641,20 +671,24 @@ private fun VoiceMessageView(
     }
 }
 
-/** Bubble for a message whose media type couldn't be identified: a generic file chip that shares the raw file when tapped. */
+/**
+ * Generic file chip: an icon, a one-line label, and a trailing action icon. Used for both a
+ * message whose media type couldn't be identified (tap shares the raw file directly - there's
+ * nothing to preview) and a PDF (tap opens the page viewer instead).
+ */
 @Composable
-private fun UnknownFileView(
-    filePath: String,
-    context: Context,
+private fun FileChipView(
+    label: String,
+    trailingIcon: Int,
+    trailingIconRotation: Float = 0f,
+    onClick: () -> Unit,
 ) {
-    val file = remember(filePath) { File(filePath) }
-
     Row(
         modifier = Modifier
             .widthIn(min = 160.dp, max = 220.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(BackgroundColor)
-            .clickable { file.shareFile(context) }
+            .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -667,7 +701,7 @@ private fun UnknownFileView(
         Spacer(Modifier.width(8.dp))
         Text(
             modifier = Modifier.weight(1f),
-            text = "Unknown file",
+            text = label,
             style = TextStyle(fontSize = 13.sp),
             color = TextPrimaryColor,
             maxLines = 1,
@@ -675,9 +709,11 @@ private fun UnknownFileView(
         )
         Spacer(Modifier.width(8.dp))
         Icon(
-            modifier = Modifier.size(16.dp),
-            painter = painterResource(R.drawable.ic_share),
-            contentDescription = "Share",
+            modifier = Modifier
+                .size(16.dp)
+                .rotate(trailingIconRotation),
+            painter = painterResource(trailingIcon),
+            contentDescription = null,
             tint = PrimaryColor,
         )
     }

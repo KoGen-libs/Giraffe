@@ -128,6 +128,16 @@ class MediaSignaturesTest {
     }
 
     @Test
+    fun `isLikelyUtf8Text considers a minimal, uncompressed PDF to be text`() {
+        // Deliberately: this function means "not text", full stop, for every caller (e.g.
+        // PcmAudioHeuristics.looksLikePcm16 relies on that). ProtoWireScanner special-cases PDF
+        // itself for its own leaf-vs-text decision rather than this function lying about it.
+        val asciiPdf = "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n".toByteArray()
+
+        assertThat(MediaSignatures.isLikelyUtf8Text(asciiPdf)).isTrue()
+    }
+
+    @Test
     fun `tryDecodeBase64 decodes a well-formed payload and strips a data URI prefix`() {
         val original = "hello giraffe".toByteArray()
         val encoded = JavaBase64.getEncoder().encodeToString(original)

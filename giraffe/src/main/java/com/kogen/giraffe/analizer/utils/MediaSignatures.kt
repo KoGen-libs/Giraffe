@@ -22,6 +22,10 @@ internal object MediaSignatures {
     val MP4_FTYP = byteArrayOf(0x66.toByte(), 0x74.toByte(), 0x79.toByte(), 0x70.toByte())
     private val THREE_GP = byteArrayOf(0x33.toByte(), 0x67.toByte(), 0x70.toByte())
 
+    // "%PDF-" / "%%EOF"
+    val PDF = byteArrayOf(0x25.toByte(), 0x50.toByte(), 0x44.toByte(), 0x46.toByte(), 0x2D.toByte())
+    val PDF_EOF = byteArrayOf(0x25.toByte(), 0x25.toByte(), 0x45.toByte(), 0x4F.toByte(), 0x46.toByte())
+
     /** Decodes a (optionally `data:...;base64,`-prefixed) base64 string, or `null` if it isn't valid base64. */
     fun tryDecodeBase64(str: String): ByteArray? {
         val cleaned = str.substringAfter("base64,").trim()
@@ -36,7 +40,11 @@ internal object MediaSignatures {
     /**
      * Checks whether [bytes] round-trip cleanly through UTF-8 decode/re-encode and contain no
      * control characters below tab - used to rule out treating genuine text payloads as binary
-     * media leaves.
+     * media leaves. Deliberately generic - callers with a more specific reason to override this
+     * (see [ProtoWireScanner.collectLeaves][com.kogen.giraffe.analizer.utils.ProtoWireScanner]
+     * special-casing PDF) should layer that on top rather than baking it in here, since this
+     * function is also relied on elsewhere (e.g. [PcmAudioHeuristics.looksLikePcm16]) to mean
+     * exactly "not text", full stop.
      */
     fun isLikelyUtf8Text(bytes: ByteArray): Boolean {
         return try {

@@ -69,7 +69,13 @@ class ProtoWireScanner {
         for (field in scan(data)) {
             val payload = field.bytes ?: continue
             if (field.wireType != 2) continue
-            if (MediaSignatures.isLikelyUtf8Text(payload)) continue
+            // A minimal, uncompressed PDF can be pure printable ASCII end to end - unlike every
+            // other format detected downstream, whose signature or binary payload data reliably
+            // fails the text check. Override just this leaf/text decision for it (rather than
+            // isLikelyUtf8Text itself, which other callers rely on to mean "not text", full stop -
+            // see PcmAudioHeuristics.looksLikePcm16), or such a PDF would never reach a parser.
+            val looksLikePdf = MediaSignatures.matchesAt(payload, 0, MediaSignatures.PDF)
+            if (MediaSignatures.isLikelyUtf8Text(payload) && !looksLikePdf) continue
 
             val nested = scan(payload)
             val consumedAll = nested.isNotEmpty() && nested.last().endOffset == payload.size

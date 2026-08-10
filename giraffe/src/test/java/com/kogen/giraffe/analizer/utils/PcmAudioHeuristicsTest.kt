@@ -46,6 +46,19 @@ class PcmAudioHeuristicsTest {
     }
 
     @Test
+    fun `looksLikePcm16 rejects a minimal, uncompressed PDF reinterpreted as samples`() {
+        // Regression test: a PDF this plain is exactly what tricked ProtoWireScanner into
+        // treating it as ordinary text before (see ProtoWireScannerTest); it must still get
+        // rejected by the *audio* heuristic even now that the scanner lets it through as a leaf,
+        // or GiraffeAudioParser ends up claiming it before GiraffePdfParser ever sees it.
+        val pdfLine = "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+        val pdf = ("%PDF-1.4\n" + pdfLine.repeat(20) + "%%EOF\n").toByteArray()
+        val evenLengthPdf = if (pdf.size % 2 == 0) pdf else pdf + byteArrayOf(0x0A)
+
+        assertThat(PcmAudioHeuristics.looksLikePcm16(evenLengthPdf)).isFalse()
+    }
+
+    @Test
     fun `looksLikePcm16 rejects a heavily clipped signal`() {
         val sampleCount = 400
         val buffer = ByteBuffer.allocate(sampleCount * 2).order(ByteOrder.LITTLE_ENDIAN)
