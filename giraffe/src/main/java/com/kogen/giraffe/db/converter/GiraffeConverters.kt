@@ -4,10 +4,12 @@ import androidx.room.TypeConverter
 import com.kogen.giraffe.ui.common.domain.models.GiraffeChatStatus
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 
+/** Room [TypeConverter]s for storing [GiraffeContentType]/[GiraffeChatStatus] enums as their name strings. */
 class GiraffeConverters {
     @TypeConverter
     fun fromContentType(value: GiraffeContentType): String = value.name
 
+    /** Falls back to [GiraffeContentType.Unknown] rather than crashing if a stored name doesn't match a current enum constant (e.g. after a rename). */
     @TypeConverter
     fun toContentType(value: String): GiraffeContentType {
         return try {

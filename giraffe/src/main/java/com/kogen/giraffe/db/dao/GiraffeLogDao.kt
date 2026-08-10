@@ -15,6 +15,7 @@ import com.kogen.giraffe.db.entity.GiraffeMessageEntity
 import kotlinx.coroutines.flow.Flow
 import kz.evko.kogen_di.annotations.KoGenBean
 
+/** Room DAO for Giraffe's traffic log; chat rows cascade-delete their headers/messages (see the entities' foreign keys). */
 @Dao
 interface GiraffeLogDao {
     @Transaction
@@ -37,12 +38,14 @@ interface GiraffeLogDao {
     @Update
     suspend fun updateChat(chat: GiraffeChatEntity)
 
+    /** Records a new call: inserts its row and request headers together so a concurrent reader never sees the chat without its headers. */
     @Transaction
     suspend fun startChat(chat: GiraffeChatEntity, requestHeaders: List<GiraffeHeaderEntity>) {
         insertChat(chat)
         insertHeaders(requestHeaders)
     }
 
+    /** Finalizes a call: applies its terminal [finalStatus] and inserts response headers together. */
     @Transaction
     suspend fun completeChat(
         chatId: String,
@@ -56,6 +59,7 @@ interface GiraffeLogDao {
     @Query("UPDATE giraffe_chat SET status = :finalStatus WHERE chatId = :chatId")
     suspend fun updateChatStatus(chatId: String, finalStatus: GiraffeChatStatus)
 
+    /** Marks any chat left in [activeStatus] (normally [GiraffeChatStatus.InProgress]) as [targetStatus] - run on startup to clean up calls that never reached [completeChat] because the process died mid-call. */
     @Query("UPDATE giraffe_chat SET status = :targetStatus WHERE status = :activeStatus")
     suspend fun sanitizeStuckChats(
         activeStatus: GiraffeChatStatus = GiraffeChatStatus.InProgress,
@@ -69,5 +73,6 @@ interface GiraffeLogDao {
     suspend fun deleteChatsByIds(chatIds: List<String>)
 }
 
+/** DI factory exposing [GiraffeDb]'s DAO as its own injectable component. */
 @KoGenBean(true)
 internal fun provideGiraffeLogDao(db: GiraffeDb) = db.giraffeLogDao()

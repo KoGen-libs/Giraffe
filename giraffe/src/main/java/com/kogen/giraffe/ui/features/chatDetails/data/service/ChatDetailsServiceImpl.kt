@@ -18,6 +18,12 @@ import kotlinx.coroutines.flow.onEach
 import kz.evko.kogen_di.annotations.KoGenComponent
 import kotlin.coroutines.CoroutineContext
 
+/**
+ * Keeps [chatDetails] pointed at whichever chat was most recently requested via
+ * [loadChatDetails]: switching [currentChatId] re-subscribes the Room query via [flatMapLatest],
+ * so the details screen keeps receiving live updates for the active chat and automatically drops
+ * the previous subscription instead of leaking it.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @KoGenComponent(true)
 internal class ChatDetailsServiceImpl(

@@ -26,6 +26,26 @@ import java.util.UUID
 
 private val TAG = GiraffeInterceptor::class.java.simpleName
 
+/**
+ * A gRPC [ClientInterceptor] that logs every call's headers and messages, persists them to
+ * Giraffe's own database, and surfaces a live notification for each call - giving an in-app debug
+ * view of gRPC traffic without touching server-side logs or a network proxy.
+ *
+ * Attach it once when building the [io.grpc.Channel]/`ManagedChannel`, e.g.:
+ * ```
+ * ManagedChannelBuilder.forAddress(host, port)
+ *     .intercept(GiraffeInterceptor(context))
+ *     .build()
+ * ```
+ * Tapping the notification (or a chat row in the in-app log viewer) opens
+ * [com.kogen.giraffe.ui.common.main.GiraffeActivity] with the full request/response history for
+ * that call.
+ *
+ * @param context used to bootstrap Giraffe's DI graph and database; the application context is
+ * retained internally, so a short-lived `Activity` context is safe to pass here.
+ * @param loggingEnabled when `false`, suppresses this interceptor's own `Log.d` output while
+ * still recording traffic to the database and notifications.
+ */
 class GiraffeInterceptor(
     context: Context,
     private val loggingEnabled: Boolean = true,
@@ -41,10 +61,13 @@ class GiraffeInterceptor(
         notificationService = inject()
         analyzer = inject()
         scope.launch {
+            // A call that was mid-flight when the process died would otherwise stay
+            // "InProgress" forever; flag any such rows as Interrupted on every fresh start.
             giraffeLogDao.sanitizeStuckChats()
         }
     }
 
+    /** Wraps [next]'s call so every header/message/close event is mirrored into logging, storage, and notifications. */
     override fun <ReqT, RespT> interceptCall(
         method: MethodDescriptor<ReqT, RespT>,
         callOptions: CallOptions,
@@ -156,6 +179,7 @@ class GiraffeInterceptor(
 
     }
 
+    /** Analyzes one request/response message, then fans the result out to logging, the DB, and a notification. */
     private fun processMessage(
         method: String,
         host: String,

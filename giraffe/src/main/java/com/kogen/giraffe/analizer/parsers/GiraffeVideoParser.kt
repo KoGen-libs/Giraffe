@@ -6,6 +6,7 @@ import com.kogen.giraffe.analizer.utils.ProtoWireScanner
 import com.kogen.giraffe.analizer.utils.saveMediaToCache
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 
+/** Detects MP4 inside a message's binary leaves by its `ftyp` box signature at offset 4. */
 internal class GiraffeVideoParser : ContentParser {
     override fun parse(originalBytes: ByteArray, context: Context): ParserResult? {
         for (leaf in ProtoWireScanner().findBinaryLeaves(originalBytes)) {

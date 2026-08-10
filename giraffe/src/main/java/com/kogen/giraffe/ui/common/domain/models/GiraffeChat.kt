@@ -3,6 +3,7 @@ package com.kogen.giraffe.ui.common.domain.models
 import com.kogen.giraffe.db.entity.ChatWithDetails
 import com.kogen.giraffe.ui.common.presentation.extensions.timestampToDateTime
 
+/** UI-layer view of a gRPC call, mapped from the Room [ChatWithDetails] projection via [toDomain]. */
 internal data class GiraffeChat(
     val id: String,
     val url: String,
@@ -13,6 +14,7 @@ internal data class GiraffeChat(
     val messages: List<GiraffeMessage>,
 )
 
+/** Maps the Room join projection to the UI-layer [GiraffeChat] model. */
 internal fun ChatWithDetails.toDomain(): GiraffeChat {
     return GiraffeChat(
         id = this.chat.chatId,

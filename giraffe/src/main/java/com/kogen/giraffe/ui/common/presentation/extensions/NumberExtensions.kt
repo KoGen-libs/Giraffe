@@ -3,6 +3,7 @@ package com.kogen.giraffe.ui.common.presentation.extensions
 import java.util.Calendar
 import java.util.Date
 
+/** Formats this epoch-millis timestamp as `H:M:S` (unpadded, device local time), used for a message's inline timestamp. */
 fun Long.timestampToTime(): String {
     val calendar = Calendar.getInstance()
     calendar.timeInMillis = this
@@ -12,10 +13,12 @@ fun Long.timestampToTime(): String {
     }"
 }
 
+/** Formats this epoch-millis timestamp with [Date]'s default (platform-locale) representation, used for a call's full start/end time display. */
 fun Long.timestampToDateTime(): String {
     return Date(this).toString()
 }
 
+/** Formats this millisecond duration as `M:SS`, e.g. for a voice message's elapsed/total time. */
 fun Int.msToDurationText(): String {
     val totalSeconds = this / 1000
     val minutes = totalSeconds / 60

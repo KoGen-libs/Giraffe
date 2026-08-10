@@ -6,6 +6,7 @@ import com.kogen.giraffe.analizer.utils.ProtoWireScanner
 import com.kogen.giraffe.analizer.utils.saveMediaToCache
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 
+/** Detects PNG/JPEG/GIF/WEBP inside a message's binary leaves by their magic-byte signatures. */
 internal class GiraffeImageParser : ContentParser {
     private enum class Format(val extension: String) {
         PNG("png"), JPEG("jpg"), GIF("gif"), WEBP("webp")
@@ -32,6 +33,7 @@ internal class GiraffeImageParser : ContentParser {
         return null
     }
 
+    /** Identifies the image format from the magic bytes at the very start of [bytes], or `null` if none match. */
     private fun matchFormatAtStart(bytes: ByteArray): Format? = when {
         MediaSignatures.matchesAt(bytes, 0, MediaSignatures.PNG) -> Format.PNG
         MediaSignatures.matchesAt(bytes, 0, MediaSignatures.JPEG) -> Format.JPEG

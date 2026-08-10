@@ -18,6 +18,11 @@ internal object PcmAudioHeuristics {
     private const val MAX_DELTA_TO_STD_RATIO = 2.5
     private const val CLIP_THRESHOLD = 32000
 
+    /**
+     * Scores [bytes] as likely-or-not headerless LINEAR16 PCM by checking sample statistics
+     * (standard deviation, clipping, silence, and sample-to-sample smoothness) against thresholds
+     * tuned to reject text/structured binary while accepting real speech/audio.
+     */
     fun looksLikePcm16(bytes: ByteArray): Boolean {
         if (bytes.size % 2 != 0) return false
         val sampleCount = bytes.size / 2

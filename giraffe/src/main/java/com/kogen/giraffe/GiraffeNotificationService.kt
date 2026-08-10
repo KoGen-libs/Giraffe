@@ -13,6 +13,7 @@ import java.util.UUID
 
 private const val CHANNEL_ID = "grpc_traffic_channel"
 
+/** Posts one system notification per gRPC message, tapping it opens [GiraffeActivity] on that call's detail screen. */
 @KoGenComponent(true)
 class GiraffeNotificationService(private val context: Context) {
 
@@ -20,7 +21,14 @@ class GiraffeNotificationService(private val context: Context) {
         createNotificationChannel(context)
     }
 
+    /**
+     * Builds and posts a notification for a single request/response message. Uses
+     * [notificationId]'s hash as the notification ID so every message belonging to the same call
+     * updates the same notification instead of stacking new ones.
+     */
     fun sendTrafficNotification(methodName: String, host: String, message: String, notificationId: UUID) {
+        // Protobuf's toString() prefixes messages with a "# comment" header line in some builds;
+        // drop it so the notification body starts with actual content.
         val cleanBody = message.lineSequence()
             .dropWhile { it.trim().startsWith("#") }
             .joinToString("\n")
@@ -57,6 +65,7 @@ class GiraffeNotificationService(private val context: Context) {
     }
 
 
+    /** Registers the high-importance notification channel used for all traffic notifications (a no-op if it already exists). */
     fun createNotificationChannel(context: Context) {
         val name = "gRaffe Traffic"
         val descriptionText = "gRPC traffic interceptor alerts"

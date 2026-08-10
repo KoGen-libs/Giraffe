@@ -1,10 +1,15 @@
 package com.kogen.giraffe.analizer.utils
 
+/**
+ * Parses arbitrary bytes as protobuf wire format without a `.proto` schema, so embedded media
+ * (which has no message definition of its own) can still be located inside a logged message.
+ */
 class ProtoWireScanner {
     companion object {
         private const val MIN_MESSAGE_BYTE_COVERAGE = 0.9
     }
 
+    /** Decodes [data] as a flat sequence of top-level protobuf fields, stopping (without error) at the first byte that doesn't parse as a valid tag/value. */
     fun scan(data: ByteArray): List<ProtoField> {
         val fields = mutableListOf<ProtoField>()
         var pos = 0
@@ -59,6 +64,7 @@ class ProtoWireScanner {
         return leaves
     }
 
+    /** Recursive worker for [findBinaryLeaves]: scans [data]'s length-delimited fields, recursing into ones that look like real nested messages and collecting the rest into [out]. */
     private fun collectLeaves(data: ByteArray, minSize: Int, out: MutableList<ByteArray>) {
         for (field in scan(data)) {
             val payload = field.bytes ?: continue
@@ -99,6 +105,7 @@ class ProtoWireScanner {
         }
     }
 
+    /** Decodes a protobuf base-128 varint starting at [start], returning its value and byte length, or `null` if it runs off the end of [data] or exceeds 64 bits. */
     private fun readVariant(data: ByteArray, start: Int): Pair<Long, Int>? {
         var result = 0L
         var shift = 0
@@ -115,6 +122,7 @@ class ProtoWireScanner {
     }
 }
 
+/** One decoded protobuf wire-format field; [bytes] holds the payload for length-delimited (wireType 2) fields, `null` otherwise. */
 data class ProtoField(
     val fieldNumber: Int,
     val wireType: Int,
