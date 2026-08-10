@@ -61,6 +61,8 @@ android {
 tasks.configureEach {
     if (name == "extractDebugAnnotations") dependsOn("kspDebugKotlin")
     if (name == "extractReleaseAnnotations") dependsOn("kspReleaseKotlin")
+    if (name == "sourceReleaseJar") dependsOn("kspReleaseKotlin")
+    if (name == "javaDocReleaseGeneration") dependsOn("kspReleaseKotlin")
 }
 
 dependencies {

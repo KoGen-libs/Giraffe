@@ -94,7 +94,11 @@
       "Bash(git log *)",
       "Bash(./gradlew :giraffe:testDebugUnitTest :giraffe:assembleDebug :app:assembleDebug --console=plain)",
       "Bash(javap -p 'coil.decode.VideoFrameDecoder$Factory')",
-      "Bash(./gradlew :giraffe:assembleDebug :app:assembleDebug --console=plain)"
+      "Bash(./gradlew :giraffe:assembleDebug :app:assembleDebug --console=plain)",
+      "Bash(gh api *)",
+      "Bash(./gradlew :giraffe:tasks --group publishing --console=plain)",
+      "Bash(./gradlew :giraffe:publish -Pversion=0.0.0-test --console=plain)",
+      "Bash(cd *)"
     ]
   }
 }
