@@ -17,10 +17,13 @@
         <!--
         Authority is namespaced with ${applicationId} so it can't collide with a FileProvider
         the host app declares for itself - Giraffe is embedded into arbitrary host apps, and two
-        providers sharing one authority would fail the manifest merge.
+        providers sharing one authority would fail the manifest merge. android:name also uses a
+        distinct subclass (GiraffeFileProvider), not the raw FileProvider class - the merger keys
+        <provider> elements by android:name, so reusing FileProvider directly still collides with
+        a host app's own FileProvider declaration even with differing authorities.
         -->
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name="com.kogen.giraffe.provider.GiraffeFileProvider"
             android:authorities="${applicationId}.giraffeprovider"
             android:exported="false"
             android:grantUriPermissions="true">
