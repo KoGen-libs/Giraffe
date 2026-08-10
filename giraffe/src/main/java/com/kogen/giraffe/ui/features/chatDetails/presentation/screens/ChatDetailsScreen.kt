@@ -80,6 +80,7 @@ import kotlin.random.Random
 
 private const val WAVEFORM_BAR_COUNT = 27
 
+/** Renders one call's request/response history as a chat-style message list, with a collapsible request-metadata header. */
 @Composable
 internal fun ChatDetailsScreen(
     state: ChatDetailsState,
@@ -189,6 +190,7 @@ internal fun ChatDetailsScreen(
     }
 }
 
+/** Collapsible panel showing a call's URL, timing, status, and headers, toggled by the chevron below the top bar. */
 @Composable
 private fun RequestDetailsView(
     chat: GiraffeChat?,
@@ -276,6 +278,7 @@ private fun RequestDetailsView(
     }
 }
 
+/** Left-aligned bubble for an incoming (server) message: text plus any extracted media rendered per [message]'s content type. */
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 private fun ServerMessageView(
@@ -398,6 +401,7 @@ private fun ServerMessageView(
     }
 }
 
+/** Right-aligned mirror of [ServerMessageView] for an outgoing (client) message. */
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 private fun ClientMessageView(
@@ -520,6 +524,11 @@ private fun ClientMessageView(
     }
 }
 
+/**
+ * A voice-message bubble: play/pause button, a scrubbable waveform, and elapsed/total time.
+ * Bar heights are derived deterministically from [filePath]'s hash (there's no real waveform data
+ * available) so a given message's waveform stays visually stable across recompositions.
+ */
 @Composable
 private fun VoiceMessageView(
     filePath: String,
@@ -632,6 +641,7 @@ private fun VoiceMessageView(
     }
 }
 
+/** Bubble for a message whose media type couldn't be identified: a generic file chip that shares the raw file when tapped. */
 @Composable
 private fun UnknownFileView(
     filePath: String,

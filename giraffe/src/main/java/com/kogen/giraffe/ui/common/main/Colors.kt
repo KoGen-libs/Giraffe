@@ -2,6 +2,8 @@ package com.kogen.giraffe.ui.common.main
 
 import androidx.compose.ui.graphics.Color
 
+// Giraffe's UI always renders in a fixed dark palette regardless of the host app's theme, so the
+// debug viewer looks the same no matter what app it's embedded in.
 val BackgroundColor = Color(0xFF121212)
 val BGSecondaryColor = Color(0xFF1E1E1E)
 val BGTertiaryColor = Color(0xFF263238)

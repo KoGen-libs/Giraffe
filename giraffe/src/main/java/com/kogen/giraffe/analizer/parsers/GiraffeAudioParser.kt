@@ -8,6 +8,11 @@ import com.kogen.giraffe.analizer.utils.ProtoWireScanner
 import com.kogen.giraffe.analizer.utils.saveMediaToCache
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 
+/**
+ * Detects MP3 (via chained frame-sync validation) or WAV (via its RIFF/WAVE signature) inside a
+ * message's binary leaves, and falls back to a statistical PCM16 heuristic - wrapping the result
+ * in a synthetic WAV header - for headerless raw audio that carries no magic bytes at all.
+ */
 internal class GiraffeAudioParser : ContentParser {
     private enum class Format(val extension: String) {
         MP3("mp3"), WAV("wav")
@@ -49,6 +54,7 @@ internal class GiraffeAudioParser : ContentParser {
         }
     }
 
+    /** Picks whichever of MP3/WAV starts earliest in [bytes], in case both signatures happen to be present. */
     private fun findEarliestMatch(bytes: ByteArray): Match? {
         val candidates = listOfNotNull(
             Mp3FrameSync.findValidatedStart(bytes)?.let { Match(it, Format.MP3) },

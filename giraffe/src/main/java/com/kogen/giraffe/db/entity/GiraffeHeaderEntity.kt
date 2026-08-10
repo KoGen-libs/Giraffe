@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+/** One gRPC metadata header, tagged [isResponse] to distinguish request from trailer headers, and deleted when its parent [GiraffeChatEntity] is. */
 @Entity(
     tableName = "giraffe_headers",
     foreignKeys = [

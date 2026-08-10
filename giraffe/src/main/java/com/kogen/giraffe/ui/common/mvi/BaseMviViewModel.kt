@@ -12,10 +12,19 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** Marker for a user/UI-triggered intent dispatched to a [BaseMviViewModel]. */
 interface UiAction
+/** Marker for a screen's observable state, held by a [BaseMviViewModel]. */
 interface UiState
+/** Marker for a one-shot side effect (navigation, etc.) emitted by a [BaseMviViewModel]. */
 interface UiEffect
 
+/**
+ * Base MVI ViewModel shared by every feature screen: holds a single [state] [kotlinx.coroutines.flow.StateFlow]
+ * and emits one-shot [effects] through a buffered channel (so effects like navigation aren't
+ * dropped if emitted before a collector attaches, but also aren't replayed to a later collector).
+ * Subclasses implement [handleAction] and drive state via [updateState]/[emitEffect].
+ */
 abstract class BaseMviViewModel<A : UiAction, S : UiState, E : UiEffect>(
     initialState: S
 ) : ViewModel() {
@@ -26,6 +35,7 @@ abstract class BaseMviViewModel<A : UiAction, S : UiState, E : UiEffect>(
     private val _effects = Channel<E>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
+    /** Entry point called by [com.kogen.giraffe.ui.common.ScreenContainerWrapper] for every UI-dispatched action. */
     fun dispatch(action: A) {
         logAction(action)
         handleAction(action)
@@ -50,6 +60,7 @@ abstract class BaseMviViewModel<A : UiAction, S : UiState, E : UiEffect>(
         Log.d("MVI_EFFECT", "✨ Effect: ${effect::class.simpleName}")
     }
 
+    /** Runs [call] on IO, then delivers its result/failure back on Main via [onSuccess]/[onError] - the standard shape for a use-case-backed action. */
     protected fun <T> wrappedRequest(
         call: suspend () -> T,
         onSuccess: (T) -> Unit = {},

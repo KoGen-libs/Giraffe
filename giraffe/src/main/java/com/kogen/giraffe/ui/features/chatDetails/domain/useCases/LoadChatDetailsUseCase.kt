@@ -5,6 +5,7 @@ import com.kogen.giraffe.ui.features.chatDetails.domain.service.ChatDetailsServi
 import kotlinx.coroutines.flow.Flow
 import kz.evko.kogen_di.annotations.KoGenComponent
 
+/** Use case wrapping [ChatDetailsService] for [ChatDetailsViewModel][com.kogen.giraffe.ui.features.chatDetails.presentation.mvi.ChatDetailsViewModel]. */
 internal interface LoadChatDetailsUseCase {
     val chatDetails: Flow<GiraffeChat?>
     suspend fun execute(id: String)

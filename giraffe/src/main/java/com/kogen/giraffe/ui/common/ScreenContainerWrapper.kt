@@ -9,6 +9,12 @@ import com.kogen.giraffe.ui.common.mvi.UiAction
 import com.kogen.giraffe.ui.common.mvi.UiEffect
 import com.kogen.giraffe.ui.common.mvi.UiState
 
+/**
+ * Standard glue between a [BaseMviViewModel] and its Composable screen: collects [viewModel]'s
+ * state (lifecycle-aware) and effects, forwarding effects to [onEffect] and rendering
+ * [screenContent] with the current state and a dispatch function. Every `*Container` in the
+ * `ui.features` package is built on this.
+ */
 @Composable
 fun <S : UiState, A : UiAction, E : UiEffect> ScreenContainerWrapper(
     viewModel: BaseMviViewModel<A, S, E>,

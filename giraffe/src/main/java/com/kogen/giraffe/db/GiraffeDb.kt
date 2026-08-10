@@ -12,6 +12,7 @@ import com.kogen.giraffe.db.entity.GiraffeHeaderEntity
 import com.kogen.giraffe.db.entity.GiraffeMessageEntity
 import kz.evko.kogen_di.annotations.KoGenBean
 
+/** Room database backing Giraffe's own traffic log (chats, headers, messages) - internal storage, never exposed to the host app. */
 @Database(
     entities = [
         GiraffeChatEntity::class,
@@ -26,6 +27,7 @@ abstract class GiraffeDb : RoomDatabase() {
     abstract fun giraffeLogDao(): GiraffeLogDao
 }
 
+/** DI factory for [GiraffeDb]; multi-instance invalidation lets multiple processes embedding Giraffe see each other's writes. */
 @KoGenBean(true)
 internal fun provideDB(context: Context): GiraffeDb = Room.databaseBuilder(
     context.applicationContext,

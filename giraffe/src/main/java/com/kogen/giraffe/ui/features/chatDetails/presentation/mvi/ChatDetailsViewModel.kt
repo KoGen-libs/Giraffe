@@ -7,6 +7,7 @@ import com.kogen.giraffe.ui.features.chatDetails.domain.useCases.LoadChatDetails
 import kotlinx.coroutines.launch
 import kz.evko.kogen_di.annotations.KoGenViewModel
 
+/** ViewModel for the chat details screen: streams the selected chat's details and drives voice-message playback. */
 @KoGenViewModel
 internal class ChatDetailsViewModel(
     private val loadChatDetailsUseCase: LoadChatDetailsUseCase,

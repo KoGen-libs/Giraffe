@@ -6,6 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 
+/** One request or response message body within a call: its parsed [contentType], text form, and any extracted media's [filePath]. */
 @Entity(
     tableName = "giraffe_messages",
     foreignKeys = [

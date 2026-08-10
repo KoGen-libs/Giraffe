@@ -48,6 +48,7 @@ import com.kogen.giraffe.ui.common.presentation.NoContentView
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListAction
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListState
 
+/** Renders the full chat list with multi-select and bulk-delete, or [NoContentView] when empty. */
 @Composable
 internal fun ChatListScreen(
     state: ChatListState,
@@ -183,6 +184,7 @@ internal fun ChatListScreen(
     }
 }
 
+/** One row in the chat list: status icon, URL, last message preview, and (for completed calls) a selection checkbox. */
 @Composable
 private fun ChatListItem(
     chat: GiraffeChat,

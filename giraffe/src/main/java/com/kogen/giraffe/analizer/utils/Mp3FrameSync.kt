@@ -1,5 +1,10 @@
 package com.kogen.giraffe.analizer.utils
 
+/**
+ * Finds a genuine MP3 stream inside arbitrary binary data by validating that a candidate frame
+ * header is followed by a chain of further valid frame headers - MP3's `0xFF Ex` sync pattern
+ * alone is common enough in random binary that a single match isn't reliable evidence of audio.
+ */
 internal object Mp3FrameSync {
     private val bitrateV1L1 =
         intArrayOf(0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, -1)
@@ -16,6 +21,7 @@ internal object Mp3FrameSync {
     private val sampleRateV2 = intArrayOf(22050, 24000, 16000, -1)
     private val sampleRateV25 = intArrayOf(11025, 12000, 8000, -1)
 
+    /** Parses an MPEG audio frame header at [offset] and computes its length in bytes, or `null` if the header is invalid/reserved. */
     private fun frameLength(bytes: ByteArray, offset: Int): Int? {
         if (offset + 4 > bytes.size) return null
         val b1 = bytes[offset + 1].toInt() and 0xFF
@@ -64,6 +70,11 @@ internal object Mp3FrameSync {
         return length.takeIf { it > 0 }
     }
 
+    /**
+     * Scans [bytes] for the first sync pattern that's followed by at least [minChainedFrames]
+     * consecutive valid frames (each frame's computed length correctly leading into the next
+     * frame's header), and returns its offset - or `null` if no such chain exists.
+     */
     fun findValidatedStart(bytes: ByteArray, minChainedFrames: Int = 3): Int? {
         var i = 0
         while (i < bytes.size - 4) {

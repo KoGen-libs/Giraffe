@@ -10,6 +10,11 @@ import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListEffect
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListViewModel
 import kz.evko.navigation.annotation.KoGenScreen
 
+/**
+ * Nav-graph start destination for Giraffe's UI (registered via `@KoGenScreen` in Giraffe's own
+ * generated nav graph, not something the embedding app navigates to directly): the top-level list
+ * of logged calls.
+ */
 @KoGenScreen(startDestination = true)
 @Composable
 fun ChatListContainer(

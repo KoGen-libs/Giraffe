@@ -16,11 +16,20 @@ import org.json.JSONObject
 
 private const val MAX_DB_TEXT_LENGTH = 500_000
 
+/**
+ * Turns a raw gRPC message (a protobuf [com.google.protobuf.MessageLite] or arbitrary [Any]) into
+ * an [AnalysisResult]: a human-readable text form for the log viewer, plus any embedded binary
+ * media (image/audio/video/unknown) extracted to a cache file and swapped out of the text for a
+ * placeholder, since dumping raw media bytes into the DB/notification text would be both huge and
+ * unreadable.
+ */
 @KoGenComponent(true)
 class GiraffeMessageAnalyzer(
     private val context: Context,
 ) {
 
+    // New instances per call: parsers are stateless and cheap, and this avoids sharing mutable
+    // state across concurrent analyze() calls from different in-flight RPCs.
     private val allParsers: List<ContentParser>
         get() = listOf(
             GiraffeImageParser(),
@@ -30,6 +39,11 @@ class GiraffeMessageAnalyzer(
         )
 
 
+    /**
+     * Runs the full analysis pipeline on one message: tries each [ContentParser] in turn to
+     * find and extract embedded media, then builds a text representation with that media
+     * (if found) cut out and replaced by a placeholder naming its content type.
+     */
     fun analyze(message: Any): AnalysisResult {
         val originalBytes =
             (message as? MessageLite)?.toByteArray() ?: message.toString().toByteArray()
@@ -73,6 +87,7 @@ class GiraffeMessageAnalyzer(
         )
     }
 
+    /** Debug helper: dumps up to [maxBytes] of [bytes] to logcat as a hex grid, 16 bytes per line. */
     fun logBytesAsHex(bytes: ByteArray, tag: String = ">>> raw_bytes_hex", maxBytes: Int = 512) {
         val sb = StringBuilder()
         val limit = minOf(bytes.size, maxBytes)
@@ -83,6 +98,7 @@ class GiraffeMessageAnalyzer(
         Log.d(tag, "size=${bytes.size}\n$sb")
     }
 
+    /** Caps [text] at [maxLength] characters so a pathologically large message body can't bloat the SQLite row. */
     fun truncateForDb(text: String?, maxLength: Int = MAX_DB_TEXT_LENGTH): String? {
         return when {
             text == null -> null
@@ -91,6 +107,12 @@ class GiraffeMessageAnalyzer(
         }
     }
 
+    /**
+     * Reformats protobuf's default `toString()` output (`field: value` lines) into pretty-printed
+     * JSON, so the log viewer can render structured messages consistently whether they arrived as
+     * protobuf or already as JSON. Falls back to the original text untouched if no line looks like
+     * a `key: value` pair.
+     */
     private fun transformProtobufStringToValues(message: Any): String {
         val text = message.toString()
         val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
@@ -143,6 +165,11 @@ class GiraffeMessageAnalyzer(
         return jsonObject.toString(2)
     }
 
+    /**
+     * Reverses protobuf's `toString()` escaping of a `bytes` field's value (`\n`, `\"`, octal
+     * escapes like `\307`, etc.) back into raw bytes, so escaped binary content can be inspected
+     * or decoded as text.
+     */
     fun unescapeProtobufString(input: String): ByteArray {
         val result = mutableListOf<Byte>()
         var i = 0
@@ -198,6 +225,11 @@ class GiraffeMessageAnalyzer(
         return result.toByteArray()
     }
 
+    /**
+     * Unescapes [escapedValue] and returns it as UTF-8 text only if that round-trips exactly back
+     * to the original bytes - i.e. only if it's genuinely decodable text, not binary that happens
+     * to produce *some* string when force-decoded.
+     */
     fun tryDecodeAsText(escapedValue: String): String? {
         val bytes = unescapeProtobufString(escapedValue)
         return try {
@@ -209,6 +241,11 @@ class GiraffeMessageAnalyzer(
         }
     }
 
+    /**
+     * Encodes [bytes] the same way protobuf's `toString()` escapes a `bytes` field, so extracted
+     * media bytes can be located as a substring inside the original protobuf text (see
+     * [cutMediaFromString]).
+     */
     fun escapeLikeProtobuf(bytes: ByteArray): String {
         val sb = StringBuilder()
         for (b in bytes) {
@@ -234,6 +271,14 @@ class GiraffeMessageAnalyzer(
         return sb.toString()
     }
 
+    /**
+     * Replaces the substring of [fullString] that corresponds to [mediaBytes] with [placeholder],
+     * so the pretty-printed text shown in the log/notification doesn't contain the raw
+     * (escaped, potentially huge) media payload. Locates the span by matching just the first/last
+     * [edgeSize] bytes' escaped form rather than escaping and searching for the full payload,
+     * which would be far more expensive for large media. Returns [fullString] unchanged if the
+     * span can't be found (e.g. the byte count is too small to identify a unique start/end).
+     */
     fun cutMediaFromString(
         fullString: String,
         mediaBytes: ByteArray,

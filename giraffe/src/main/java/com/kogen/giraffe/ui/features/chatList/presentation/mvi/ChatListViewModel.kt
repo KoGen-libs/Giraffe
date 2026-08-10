@@ -8,6 +8,7 @@ import com.kogen.giraffe.ui.features.chatList.domain.useCases.LoadChatListUseCas
 import kotlinx.coroutines.launch
 import kz.evko.kogen_di.annotations.KoGenViewModel
 
+/** ViewModel for the chat list screen: streams the full chat list and handles multi-select deletion. */
 @KoGenViewModel
 internal class ChatListViewModel(
     val loadChatListUseCase: LoadChatListUseCase,
@@ -47,6 +48,8 @@ internal class ChatListViewModel(
             }
 
             is ChatListAction.SelectAllChats -> {
+                // In-progress chats are excluded from selection - they can't be deleted while
+                // still active, mirroring the per-row checkbox being hidden for them below.
                 updateState {
                     it.copy(selectedIds = it.chatList.filter { chat ->
                         chat.status != GiraffeChatStatus.InProgress

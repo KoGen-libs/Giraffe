@@ -21,6 +21,7 @@ internal class ChatListServiceImpl(
         }
     }
 
+    /** Deletes the given chats' DB rows and best-effort cleans up their cached media files - a missing/already-deleted file is not treated as an error. */
     override suspend fun deleteChats(chatIds: List<String>) {
         val filePaths = dao.getFilePathsByChatIds(chatIds)
         dao.deleteChatsByIds(chatIds)

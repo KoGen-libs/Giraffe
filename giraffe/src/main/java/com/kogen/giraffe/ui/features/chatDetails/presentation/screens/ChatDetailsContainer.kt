@@ -15,6 +15,11 @@ import com.kogen.giraffe.ui.features.chatDetails.presentation.mvi.ChatDetailsEff
 import com.kogen.giraffe.ui.features.chatDetails.presentation.mvi.ChatDetailsViewModel
 import kz.evko.navigation.annotation.KoGenScreen
 
+/**
+ * Nav-graph destination for the chat details screen (registered via `@KoGenScreen` in Giraffe's
+ * own generated nav graph, not something the embedding app navigates to directly). Loads
+ * [chatId]'s details on first composition and maps [ChatDetailsEffect]s to navigation.
+ */
 @KoGenScreen
 @Composable
 fun ChatDetailsContainer(
