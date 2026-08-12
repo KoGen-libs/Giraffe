@@ -30,13 +30,13 @@ data class RestUiState(
 /**
  * Drives the REST test screen: every button maps to one call against the TestGrpc server's
  * `/rest/...` endpoints (see that project's `RestDataController`), through whichever client
- * ([okHttpRestClient] or [ktorRestClient]) [RestUiState.useKtor] currently selects - so the same
+ * ([retrofitRestClient] or [ktorRestClient]) [RestUiState.useKtor] currently selects - so the same
  * button set exercises both of Giraffe's REST interceptors depending on the toggle, without
  * duplicating a screen per stack.
  */
 @KoGenViewModel
 class RestViewModel(
-    private val okHttpRestClient: OkHttpRestClient,
+    private val retrofitRestClient: RetrofitRestClient,
     private val ktorRestClient: KtorRestClient,
 ) : ViewModel() {
 
@@ -120,8 +120,8 @@ class RestViewModel(
         }
     }
 
-    private fun restClient(useKtor: Boolean) = if (useKtor) ktorRestClient else okHttpRestClient
-    private fun stackLabel(useKtor: Boolean) = if (useKtor) "Ktor" else "OkHttp"
+    private fun restClient(useKtor: Boolean): RestClient = if (useKtor) ktorRestClient else retrofitRestClient
+    private fun stackLabel(useKtor: Boolean) = if (useKtor) "Ktor" else "Retrofit"
     private fun baseUrl(): String {
         val state = _uiState.value
         return "http://${state.serverHost}:${state.serverPort}"

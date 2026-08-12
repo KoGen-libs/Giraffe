@@ -1,13 +1,13 @@
 package com.kogen.giraffeapp
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kogen.giraffeapp.di.koGenViewModel
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RestScreen(viewModel: RestViewModel = koGenViewModel()) {
     val state by viewModel.uiState.collectAsState()
@@ -65,9 +64,9 @@ fun RestScreen(viewModel: RestViewModel = koGenViewModel()) {
 
             Text("Сервер отдаёт →", fontWeight = FontWeight.Medium, fontSize = 13.sp)
             Spacer(Modifier.height(6.dp))
-            FlowRow(
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 RestButton("Text", viewModel::getText)
                 RestButton("JSON obj", viewModel::getJsonObject)
@@ -87,9 +86,9 @@ fun RestScreen(viewModel: RestViewModel = koGenViewModel()) {
             Spacer(Modifier.height(12.dp))
             Text("← Клиент отправляет", fontWeight = FontWeight.Medium, fontSize = 13.sp)
             Spacer(Modifier.height(6.dp))
-            FlowRow(
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 RestButton("Text (echo)", viewModel::sendText)
                 RestButton("JSON (echo)", viewModel::sendJson)
@@ -164,7 +163,7 @@ private fun RestConnectionSection(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Стек:", fontSize = 13.sp)
                 Spacer(Modifier.width(8.dp))
-                FilterChip(selected = !useKtor, onClick = { onStackChange(false) }, label = { Text("OkHttp") })
+                FilterChip(selected = !useKtor, onClick = { onStackChange(false) }, label = { Text("Retrofit") })
                 Spacer(Modifier.width(6.dp))
                 FilterChip(selected = useKtor, onClick = { onStackChange(true) }, label = { Text("Ktor") })
             }
