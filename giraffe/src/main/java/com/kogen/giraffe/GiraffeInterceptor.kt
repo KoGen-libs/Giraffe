@@ -241,6 +241,7 @@ class GiraffeInterceptor(
                 host = host,
                 message = analysis?.textContent ?: message.toString(),
                 notificationId = chatId,
+                isRestCall = false,
             )
 
             if (analysis != null) {

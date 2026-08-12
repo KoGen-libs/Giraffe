@@ -102,6 +102,7 @@ internal class GiraffeRestCallRecorder(
                     ?: httpStatusCode?.toString()
                     ?: "",
                 notificationId = UUID.fromString(callId),
+                isRestCall = true,
             )
 
             val call = GiraffeRestCallEntity(
