@@ -10,6 +10,7 @@ import com.kogen.giraffe.analizer.parsers.GiraffePdfParser
 import com.kogen.giraffe.analizer.parsers.GiraffeUnknownBinaryParser
 import com.kogen.giraffe.analizer.parsers.GiraffeVideoParser
 import com.kogen.giraffe.analizer.parsers.ParserResult
+import com.kogen.giraffe.analizer.utils.ProtoWireScanner
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 import kz.evko.kogen_di.annotations.KoGenComponent
 import org.json.JSONArray
@@ -52,8 +53,12 @@ class GiraffeMessageAnalyzer(
         val textRepresentation = transformProtobufStringToValues(message)
         var parsingResult: ParserResult? = null
 
+        // Scanned once and handed to every parser below - each parser used to run this same
+        // wire-format scan itself, so a single message paid for it once per registered parser.
+        val leaves = ProtoWireScanner().findBinaryLeaves(originalBytes)
+
         for (parser in allParsers) {
-            parser.parse(originalBytes, context)?.let {
+            parser.parse(leaves, context)?.let {
                 parsingResult = it
                 break
             }

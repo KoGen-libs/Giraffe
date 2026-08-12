@@ -4,7 +4,6 @@ import android.content.Context
 import com.kogen.giraffe.analizer.utils.MediaSignatures
 import com.kogen.giraffe.analizer.utils.Mp3FrameSync
 import com.kogen.giraffe.analizer.utils.PcmAudioHeuristics
-import com.kogen.giraffe.analizer.utils.ProtoWireScanner
 import com.kogen.giraffe.analizer.utils.saveMediaToCache
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 
@@ -20,9 +19,7 @@ internal class GiraffeAudioParser : ContentParser {
 
     private data class Match(val start: Int, val format: Format)
 
-    override fun parse(originalBytes: ByteArray, context: Context): ParserResult? {
-        val leaves = ProtoWireScanner().findBinaryLeaves(originalBytes)
-
+    override fun parse(leaves: List<ByteArray>, context: Context): ParserResult? {
         for (leaf in leaves) {
             val match = findEarliestMatch(leaf) ?: continue
 

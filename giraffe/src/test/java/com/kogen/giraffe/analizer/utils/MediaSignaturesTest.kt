@@ -120,6 +120,31 @@ class MediaSignaturesTest {
     }
 
     @Test
+    fun `findMp4End treats a zero box size as extending to the end of the buffer`() {
+        // Some muxers write the final mdat's size as 0 ("runs to EOF") rather than seeking back
+        // to fill in the real size once they know it - this must not be mistaken for a malformed
+        // box, or the saved file gets cut off right before the actual frame data.
+        val ftypBox = intToBigEndian(20) + "ftyp".toByteArray() + ByteArray(12)
+        val mdatBox = intToBigEndian(0) + "mdat".toByteArray() + ByteArray(40) { 0x11 }
+        val bytes = ftypBox + mdatBox
+
+        assertThat(MediaSignatures.findMp4End(bytes, 4)).isEqualTo(bytes.size)
+    }
+
+    @Test
+    fun `findMp4End follows the 64-bit largesize when the 32-bit size field is 1`() {
+        // size == 1 means the real size is the 64-bit big-endian value in the 8 bytes right
+        // after the box type - used for boxes too large for the 32-bit field.
+        val ftypBox = intToBigEndian(20) + "ftyp".toByteArray() + ByteArray(12)
+        val mdatPayload = ByteArray(40) { 0x22 }
+        val largeSize = (8 + 8 + mdatPayload.size).toLong() // size + type + largesize + payload
+        val mdatBox = intToBigEndian(1) + "mdat".toByteArray() + longToBigEndian(largeSize) + mdatPayload
+        val bytes = ftypBox + mdatBox
+
+        assertThat(MediaSignatures.findMp4End(bytes, 4)).isEqualTo(bytes.size)
+    }
+
+    @Test
     fun `isLikelyUtf8Text accepts plain text and rejects binary noise`() {
         assertThat(MediaSignatures.isLikelyUtf8Text("hello world".toByteArray())).isTrue()
         assertThat(MediaSignatures.isLikelyUtf8Text(ByteArray(20) { 0xFF.toByte() })).isFalse()
@@ -160,6 +185,17 @@ class MediaSignaturesTest {
     )
 
     private fun intToBigEndian(value: Int): ByteArray = byteArrayOf(
+        ((value shr 24) and 0xFF).toByte(),
+        ((value shr 16) and 0xFF).toByte(),
+        ((value shr 8) and 0xFF).toByte(),
+        (value and 0xFF).toByte(),
+    )
+
+    private fun longToBigEndian(value: Long): ByteArray = byteArrayOf(
+        ((value shr 56) and 0xFF).toByte(),
+        ((value shr 48) and 0xFF).toByte(),
+        ((value shr 40) and 0xFF).toByte(),
+        ((value shr 32) and 0xFF).toByte(),
         ((value shr 24) and 0xFF).toByte(),
         ((value shr 16) and 0xFF).toByte(),
         ((value shr 8) and 0xFF).toByte(),

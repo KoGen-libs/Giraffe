@@ -21,6 +21,7 @@ import io.grpc.MethodDescriptor
 import io.grpc.Status
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -78,18 +79,19 @@ class GiraffeInterceptor(
         val host = next.authority()
         val url = "$host/${method.fullMethodName}"
 
+        // Set in start() below, then awaited by every later write for this same call (message
+        // inserts, close) so they land after the chat row start() creates - see
+        // insertMessageEnsuringChat's doc for why that's a best-effort ordering, not a
+        // correctness requirement: those writes ensure the chat row themselves if it's still
+        // missing (or was deleted) by the time they run.
+        var chatReadyJob: Job? = null
+
         return object : ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(
             next.newCall(method, callOptions)
         ) {
             override fun start(responseListener: Listener<RespT>, headers: Metadata) {
-                scope.launch {
-                    val chat = GiraffeChatEntity(
-                        chatId = chatId.toString(),
-                        url = url,
-                        methodShortName = methodShortName,
-                        timestamp = System.currentTimeMillis(),
-                        status = GiraffeChatStatus.InProgress,
-                    )
+                chatReadyJob = scope.launch {
+                    val chat = chatStub(chatId, url, methodShortName)
 
                     val reqHeaders = headers.keys().map { keyName ->
                         val key = Metadata.Key.of(keyName, Metadata.ASCII_STRING_MARSHALLER)
@@ -107,7 +109,7 @@ class GiraffeInterceptor(
                             "headers=${reqHeaders.joinToString { "${it.key}=${it.value}\n" }}"
                     )
 
-                    giraffeLogDao.startChat(chat, reqHeaders)
+                    persist("start chatId=$chatId") { giraffeLogDao.startChat(chat, reqHeaders) }
                 }
 
                 super.start(
@@ -118,7 +120,9 @@ class GiraffeInterceptor(
                             processMessage(
                                 method = methodShortName,
                                 host = host,
+                                url = url,
                                 chatId = chatId,
+                                chatReadyJob = chatReadyJob,
                                 isIncoming = true,
                                 message = message as Any,
                             )
@@ -127,6 +131,8 @@ class GiraffeInterceptor(
 
                         override fun onClose(status: Status, trailers: Metadata) {
                             scope.launch {
+                                chatReadyJob?.join()
+
                                 val respHeaders = trailers.keys().map { keyName ->
                                     val key =
                                         Metadata.Key.of(keyName, Metadata.ASCII_STRING_MARSHALLER)
@@ -151,11 +157,13 @@ class GiraffeInterceptor(
                                         "trailers=${respHeaders.joinToString { "${it.key}=${it.value}\n" }}"
                                 )
 
-                                giraffeLogDao.completeChat(
-                                    chatId = chatId.toString(),
-                                    finalStatus = chatStatus,
-                                    responseHeaders = respHeaders,
-                                )
+                                persist("close chatId=$chatId") {
+                                    giraffeLogDao.completeChat(
+                                        chatStub = chatStub(chatId, url, methodShortName),
+                                        finalStatus = chatStatus,
+                                        responseHeaders = respHeaders,
+                                    )
+                                }
                             }
 
                             super.onClose(status, trailers)
@@ -169,7 +177,9 @@ class GiraffeInterceptor(
                 processMessage(
                     method = methodShortName,
                     host = host,
+                    url = url,
                     chatId = chatId,
+                    chatReadyJob = chatReadyJob,
                     isIncoming = false,
                     message = message as Any,
                 )
@@ -183,7 +193,9 @@ class GiraffeInterceptor(
     private fun processMessage(
         method: String,
         host: String,
+        url: String,
         chatId: UUID,
+        chatReadyJob: Job?,
         isIncoming: Boolean,
         message: Any,
     ) {
@@ -220,8 +232,38 @@ class GiraffeInterceptor(
                     filePath = analysis.filePath,
                     timestamp = System.currentTimeMillis(),
                 )
-                giraffeLogDao.insertMessage(dbMessage)
+
+                // Prefer landing after the chat row start() itself creates, but don't depend on
+                // it: insertMessageEnsuringChat (re-)creates that row from a stub if start()'s
+                // own write hasn't landed yet, or if the chat was deleted (e.g. the user cleared
+                // history) while this call was still in flight.
+                chatReadyJob?.join()
+                persist("message chatId=$chatId") {
+                    giraffeLogDao.insertMessageEnsuringChat(chatStub(chatId, url, method), dbMessage)
+                }
             }
+        }
+    }
+
+    /** A stand-in chat row good enough to satisfy the [GiraffeMessageEntity]/[GiraffeHeaderEntity] foreign key when the real one (from [start]) hasn't landed yet or was deleted mid-call. */
+    private fun chatStub(chatId: UUID, url: String, methodShortName: String) = GiraffeChatEntity(
+        chatId = chatId.toString(),
+        url = url,
+        methodShortName = methodShortName,
+        timestamp = System.currentTimeMillis(),
+        status = GiraffeChatStatus.InProgress,
+    )
+
+    /**
+     * Runs [write], swallowing any failure: this is Giraffe's own bookkeeping running alongside
+     * someone else's gRPC call, and a hiccup in it (a constraint violation despite the safeguards
+     * above, disk I/O, whatever) must never crash the host app that call belongs to.
+     */
+    private suspend fun persist(what: String, write: suspend () -> Unit) {
+        try {
+            write()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to persist $what", e)
         }
     }
 

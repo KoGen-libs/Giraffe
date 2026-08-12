@@ -125,21 +125,39 @@ internal object MediaSignatures {
      * Walks MP4's top-level box structure (each box: 4-byte big-endian size + 4-byte type) forward
      * from the `ftyp` box preceding [ftypIndex] until the boxes stop covering the buffer, and
      * returns the offset just past the last well-formed box - i.e. the end of the MP4 container.
+     *
+     * Box sizes are read as unsigned and two ISO BMFF conventions get their own handling rather
+     * than being treated as malformed: `size == 0` means "this box runs to the end of the file"
+     * (used by muxers that don't seek back to fix up a final `mdat`'s size), and `size == 1` means
+     * the real size is a 64-bit "largesize" in the following 8 bytes (for boxes - typically a
+     * multi-GB `mdat` - too big for the 32-bit field). A plain 32-bit size is read as unsigned
+     * too: real `mdat` boxes routinely exceed [Int.MAX_VALUE] (~2GB), which would otherwise read
+     * as negative and get rejected as malformed, truncating the saved file down to just its
+     * header with no frame data at all.
      */
     fun findMp4End(bytes: ByteArray, ftypIndex: Int): Int {
         var pos = ftypIndex - 4
         if (pos < 0) return -1
 
         while (pos + 8 <= bytes.size) {
-            val boxSize = ((bytes[pos].toInt() and 0xFF) shl 24) or
-                    ((bytes[pos + 1].toInt() and 0xFF) shl 16) or
-                    ((bytes[pos + 2].toInt() and 0xFF) shl 8) or
-                    (bytes[pos + 3].toInt() and 0xFF)
-            if (boxSize < 8) break
+            val boxSize = ((bytes[pos].toLong() and 0xFF) shl 24) or
+                    ((bytes[pos + 1].toLong() and 0xFF) shl 16) or
+                    ((bytes[pos + 2].toLong() and 0xFF) shl 8) or
+                    (bytes[pos + 3].toLong() and 0xFF)
 
-            val next = pos + boxSize
+            if (boxSize == 0L) return bytes.size
+
+            val next: Long
+            if (boxSize == 1L) {
+                if (pos + 16 > bytes.size) break
+                next = pos + (8 until 16).fold(0L) { acc, i -> (acc shl 8) or (bytes[pos + i].toLong() and 0xFF) }
+            } else {
+                if (boxSize < 8L) break
+                next = pos + boxSize
+            }
+
             if (next <= pos || next > bytes.size) break
-            pos = next
+            pos = next.toInt()
         }
 
         return if (pos > ftypIndex) pos else -1

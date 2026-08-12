@@ -102,7 +102,18 @@
       "Bash(./gradlew :giraffe:assembleDebug :app:assembleDebug :giraffe:publish -Pversion=0.0.0-test --console=plain)",
       "Bash(grep -iE \"\\\\.kt$|\\\\.proto$\")",
       "Bash(grep -iE '\\\\.kt$|\\\\.proto$')",
-      "Bash(./gradlew :giraffe:testDebugUnitTest --tests \"com.kogen.giraffe.analizer.parsers.GiraffePdfParserTest\" --console=plain)"
+      "Bash(./gradlew :giraffe:testDebugUnitTest --tests \"com.kogen.giraffe.analizer.parsers.GiraffePdfParserTest\" --console=plain)",
+      "Bash(xargs ls)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(./gradlew :giraffe:testDebugUnitTest --tests \"com.kogen.giraffe.analizer.utils.DebugChatMessageTest\" -i)",
+      "Bash(./gradlew :giraffe:testDebugUnitTest --tests \"com.kogen.giraffe.analizer.utils.DebugRealPdfTest\" -i)",
+      "Bash(./gradlew :giraffe:testDebugUnitTest)",
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "Bash(./gradlew :giraffe:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug :giraffe:assembleDebug)",
+      "Bash(./gradlew :giraffe:testDebugUnitTest --tests \"com.kogen.giraffe.analizer.utils.MediaSignaturesTest\")",
+      "Bash(./gradlew :giraffe:testDebugUnitTest :app:compileDebugKotlin)",
+      "Bash(./gradlew :giraffe:compileDebugKotlin :giraffe:testDebugUnitTest)",
+      "Bash(./gradlew :giraffe:assembleDebug :app:assembleDebug)"
     ]
   }
 }
