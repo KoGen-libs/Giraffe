@@ -1,14 +1,15 @@
 package com.kogen.giraffe.analizer.parsers
 
 import android.content.Context
-import com.kogen.giraffe.analizer.AnalysisResult
 
 /**
- * Detects one specific kind of embedded binary media (image, audio, video, ...) inside a raw
- * message payload and, if found, saves it to disk. [com.kogen.giraffe.analizer.GiraffeMessageAnalyzer]
- * tries each registered parser in turn until one matches.
+ * Detects one specific kind of embedded binary media (image, audio, video, ...) inside a message's
+ * already-extracted binary leaves and, if found, saves it to disk.
+ * [com.kogen.giraffe.analizer.GiraffeMessageAnalyzer] scans the message once, then tries each
+ * registered parser in turn against that same [leaves] list until one matches - so a message with
+ * N parsers doesn't pay for N redundant wire-format scans.
  */
 interface ContentParser {
-    /** Returns a [ParserResult] if this parser recognizes and extracts media from [originalBytes], or `null` if it doesn't apply. */
-    fun parse(originalBytes: ByteArray, context: Context): ParserResult?
+    /** Returns a [ParserResult] if this parser recognizes and extracts media from [leaves], or `null` if it doesn't apply. */
+    fun parse(leaves: List<ByteArray>, context: Context): ParserResult?
 }

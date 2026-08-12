@@ -1,6 +1,7 @@
 package com.kogen.giraffe.analizer.parsers
 
 import com.google.common.truth.Truth.assertThat
+import com.kogen.giraffe.analizer.utils.ProtoWireScanner
 import com.kogen.giraffe.testutil.fakeContext
 import com.kogen.giraffe.testutil.lengthDelimitedField
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
@@ -29,7 +30,7 @@ class GiraffePdfParserTest {
         val originalBytes = lengthDelimitedField(fieldNumber = 6, payload = leaf)
         val context = fakeContext(tempFolder.root)
 
-        val result = parser.parse(originalBytes, context)
+        val result = parser.parse(ProtoWireScanner().findBinaryLeaves(originalBytes), context)
 
         assertThat(result).isNotNull()
         assertThat(result!!.contentType).isEqualTo(GiraffeContentType.Pdf)
@@ -45,7 +46,7 @@ class GiraffePdfParserTest {
         val originalBytes = lengthDelimitedField(fieldNumber = 6, payload = pdfBody)
         val context = fakeContext(tempFolder.root)
 
-        val result = parser.parse(originalBytes, context)
+        val result = parser.parse(ProtoWireScanner().findBinaryLeaves(originalBytes), context)
 
         assertThat(result).isNotNull()
         assertThat(result!!.bytes).isEqualTo(pdfBody)
@@ -67,7 +68,7 @@ class GiraffePdfParserTest {
         val originalBytes = lengthDelimitedField(fieldNumber = 7, payload = asciiPdf)
         val context = fakeContext(tempFolder.root)
 
-        val result = parser.parse(originalBytes, context)
+        val result = parser.parse(ProtoWireScanner().findBinaryLeaves(originalBytes), context)
 
         assertThat(result).isNotNull()
         assertThat(result!!.contentType).isEqualTo(GiraffeContentType.Pdf)
@@ -78,6 +79,6 @@ class GiraffePdfParserTest {
         val originalBytes = lengthDelimitedField(fieldNumber = 6, payload = ByteArray(30) { (it % 5).toByte() })
         val context = fakeContext(tempFolder.root)
 
-        assertThat(parser.parse(originalBytes, context)).isNull()
+        assertThat(parser.parse(ProtoWireScanner().findBinaryLeaves(originalBytes), context)).isNull()
     }
 }
