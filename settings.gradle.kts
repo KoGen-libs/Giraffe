@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "Graffe"
 include(":app")
 include(":giraffe")
+include(":giraffe-no-op")

@@ -43,7 +43,10 @@ android {
 }
 
 dependencies {
-    implementation(project(":giraffe"))
+    // Real Giraffe in debug builds, the no-op counterpart in release - see giraffe-no-op's
+    // README section. GiraffeInterceptor(...) below compiles unchanged against either.
+    debugImplementation(project(":giraffe"))
+    releaseImplementation(project(":giraffe-no-op"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.runtime)
