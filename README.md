@@ -22,10 +22,13 @@ The library is published on **Maven Central** as a single, self-contained AAR.
 ```kotlin
 dependencies {
     // Check the badge above for the latest version
-    implementation("io.github.eugenprog:giraffe:<version>")
+    debugImplementation("io.github.eugenprog:giraffe:<version>")
+    releaseImplementation("io.github.eugenprog:giraffe-no-op:<version>")
 }
 ```
 Giraffe uses KSP internally to build its own UI, but that's already baked into the published artifact - you don't need to apply the KSP plugin or configure anything to consume it.
+
+`giraffe-no-op` is a separate artifact with the exact same `GiraffeInterceptor` class and constructor, but an `interceptCall` that does nothing but forward to the channel - no logging, no database, no notification. Wiring it in via `releaseImplementation` means the line that attaches the interceptor (below) compiles unchanged for both variants, and a release build never pulls in Giraffe's real dependencies (Room, Compose, media3, Coil) at all - not just inactive at runtime, but absent from the APK. If you'd rather use a single build type for everything, just depend on `io.github.eugenprog:giraffe` directly via `implementation` and gate the `GiraffeInterceptor(...)` call yourself (see **Important Notes** below).
 
 ### Step 2: Grant the Notification Permission (Android 13+)
 
@@ -77,7 +80,7 @@ Tap a traffic notification (or launch `GiraffeActivity` yourself, e.g. from a de
 
 ## ⚠️ Important Notes
 
-1. **This is a debug tool.** Don't leave it wired into a production traffic path - gate the `GiraffeInterceptor(...)` call behind `BuildConfig.DEBUG` or a dedicated build variant.
+1. **This is a debug tool.** Don't leave it wired into a production traffic path. Preferred: `debugImplementation` the real artifact and `releaseImplementation` `giraffe-no-op` (see **Installation**) - no conditional code needed, and the real dependencies never ship in release. If you're not using build-type-specific dependencies at all, gate the `GiraffeInterceptor(...)` call behind `BuildConfig.DEBUG` yourself instead - but note that only stops it from *running*, the real artifact's dependencies still ship in your release APK either way.
 2. **`loggingEnabled = false`** on `GiraffeInterceptor` only silences its `Log.d` output - traffic is still recorded to the database and still triggers notifications regardless of this flag.
 3. **Media files** are written to the app's private cache directory and shared out (from the preview screens) through Giraffe's own `FileProvider` - you don't need to declare one yourself.
 
