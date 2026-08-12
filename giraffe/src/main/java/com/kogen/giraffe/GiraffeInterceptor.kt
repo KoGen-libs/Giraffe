@@ -1,6 +1,7 @@
 package com.kogen.giraffe
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.util.Log
 import com.kogen.giraffe.analizer.GiraffeMessageAnalyzer
 import com.kogen.giraffe.db.dao.GiraffeLogDao
@@ -42,7 +43,8 @@ private val TAG = GiraffeInterceptor::class.java.simpleName
  * that call.
  *
  * @param context used to bootstrap Giraffe's DI graph and database; the application context is
- * retained internally, so a short-lived `Activity` context is safe to pass here.
+ * retained internally, so a short-lived `Activity` context is safe to pass here. Also used to
+ * read whether the host app is debuggable - see [isEnabled].
  * @param loggingEnabled when `false`, suppresses this interceptor's own `Log.d` output while
  * still recording traffic to the database and notifications.
  */
@@ -50,29 +52,47 @@ class GiraffeInterceptor(
     context: Context,
     private val loggingEnabled: Boolean = true,
 ) : ClientInterceptor {
+
+    /**
+     * `true` only when the host app itself is debuggable (`android:debuggable` in its manifest,
+     * which Android sets from the app's own build type - not this library's). Checking this
+     * (rather than nothing) means the real implementation still refuses to do anything in a
+     * non-debuggable build even if it somehow ended up on that build's classpath by mistake - e.g.
+     * a plain `implementation` dependency instead of the intended
+     * `debugImplementation(...:giraffe:...)` / `releaseImplementation(...:giraffe-no-op:...)`
+     * split. This can't be read from Giraffe's own `BuildConfig.DEBUG`: the published AAR is
+     * always built as the library's "release" variant regardless of which build type of the
+     * *consuming* app it ends up in, so Giraffe has no build-type of its own to ask.
+     */
+    private val isEnabled = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+
     private val scope = CoroutineScope(Dispatchers.Default)
-    private var giraffeLogDao: GiraffeLogDao
-    private var notificationService: GiraffeNotificationService
-    private var analyzer: GiraffeMessageAnalyzer
+    private lateinit var giraffeLogDao: GiraffeLogDao
+    private lateinit var notificationService: GiraffeNotificationService
+    private lateinit var analyzer: GiraffeMessageAnalyzer
 
     init {
-        setApplicationContext(context)
-        giraffeLogDao = inject()
-        notificationService = inject()
-        analyzer = inject()
-        scope.launch {
-            // A call that was mid-flight when the process died would otherwise stay
-            // "InProgress" forever; flag any such rows as Interrupted on every fresh start.
-            giraffeLogDao.sanitizeStuckChats()
+        if (isEnabled) {
+            setApplicationContext(context)
+            giraffeLogDao = inject()
+            notificationService = inject()
+            analyzer = inject()
+            scope.launch {
+                // A call that was mid-flight when the process died would otherwise stay
+                // "InProgress" forever; flag any such rows as Interrupted on every fresh start.
+                giraffeLogDao.sanitizeStuckChats()
+            }
         }
     }
 
-    /** Wraps [next]'s call so every header/message/close event is mirrored into logging, storage, and notifications. */
+    /** Wraps [next]'s call so every header/message/close event is mirrored into logging, storage, and notifications - or, in a non-debuggable host build, just forwards to [next] untouched (see [isEnabled]). */
     override fun <ReqT, RespT> interceptCall(
         method: MethodDescriptor<ReqT, RespT>,
         callOptions: CallOptions,
         next: Channel,
     ): ClientCall<ReqT, RespT> {
+        if (!isEnabled) return next.newCall(method, callOptions)
+
         val chatId = UUID.randomUUID()
         val methodShortName = method.fullMethodName.substringAfterLast("/")
         val host = next.authority()

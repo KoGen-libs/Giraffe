@@ -26,3 +26,6 @@ jobs:
 
       - name: Run tests
         run: ./gradlew :giraffe:testDebugUnitTest :app:testDebugUnitTest
+
+      - name: Build both app variants (verifies giraffe-no-op's API stays a drop-in for the real module)
+        run: ./gradlew :app:assembleDebug :app:assembleRelease

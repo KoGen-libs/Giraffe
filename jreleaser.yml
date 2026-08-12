@@ -32,6 +32,7 @@ deploy:
         active: 'ALWAYS'
         stagingRepositories:
           - 'giraffe/build/staging-deploy'
+          - 'giraffe-no-op/build/staging-deploy'
         url: 'https://central.sonatype.com/api/v1/publisher'
         namespace: 'io.github.eugenprog'
         # PomChecker (внутренняя проверка JReleaser) не понимает packaging=aar

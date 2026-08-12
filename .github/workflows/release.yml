@@ -49,7 +49,7 @@ jobs:
         run: ./gradlew :giraffe:testDebugUnitTest :app:testDebugUnitTest
 
       - name: Build and create artifacts
-        run: ./gradlew :giraffe:publish -Pversion=${{ steps.get_version.outputs.TAG_VERSION }}
+        run: ./gradlew :giraffe:publish :giraffe-no-op:publish -Pversion=${{ steps.get_version.outputs.TAG_VERSION }}
 
       - name: Release with JReleaser
         uses: jreleaser/release-action@v2
