@@ -45,14 +45,35 @@ interface GiraffeLogDao {
         insertHeaders(requestHeaders)
     }
 
-    /** Finalizes a call: applies its terminal [finalStatus] and inserts response headers together. */
+    /**
+     * Inserts [message], first (re-)creating its parent chat row from [chatStub] if it isn't
+     * there - either because [message] outraced [startChat]'s own insert of the real row, or
+     * because that row was deleted (e.g. the user cleared history) while this call was still in
+     * flight. [insertChat]'s IGNORE conflict strategy makes this a no-op whenever the real row is
+     * already present, so [chatStub] only ever takes effect as a fallback. Without this, either
+     * case hits a FOREIGN KEY constraint failure - `ON CONFLICT` does not suppress those, only
+     * UNIQUE/PRIMARY KEY/CHECK violations, so IGNORE on [insertMessage] alone can't prevent it.
+     */
+    @Transaction
+    suspend fun insertMessageEnsuringChat(chatStub: GiraffeChatEntity, message: GiraffeMessageEntity) {
+        insertChat(chatStub)
+        insertMessage(message)
+    }
+
+    /**
+     * Finalizes a call: applies its terminal [finalStatus] and inserts response headers together,
+     * (re-)creating the chat row from [chatStub] first for the same reason [insertMessageEnsuringChat]
+     * does - [insertHeaders] carries the same chatId foreign key and is just as exposed to a chat
+     * row that was deleted mid-call.
+     */
     @Transaction
     suspend fun completeChat(
-        chatId: String,
+        chatStub: GiraffeChatEntity,
         finalStatus: GiraffeChatStatus,
         responseHeaders: List<GiraffeHeaderEntity>,
     ) {
-        updateChatStatus(chatId, finalStatus)
+        insertChat(chatStub)
+        updateChatStatus(chatStub.chatId, finalStatus)
         insertHeaders(responseHeaders)
     }
 

@@ -2,7 +2,6 @@ package com.kogen.giraffe.analizer.parsers
 
 import android.content.Context
 import com.kogen.giraffe.analizer.utils.MediaSignatures
-import com.kogen.giraffe.analizer.utils.ProtoWireScanner
 import com.kogen.giraffe.analizer.utils.saveMediaToCache
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 
@@ -12,8 +11,8 @@ internal class GiraffeImageParser : ContentParser {
         PNG("png"), JPEG("jpg"), GIF("gif"), WEBP("webp")
     }
 
-    override fun parse(originalBytes: ByteArray, context: Context): ParserResult? {
-        for (leaf in ProtoWireScanner().findBinaryLeaves(originalBytes)) {
+    override fun parse(leaves: List<ByteArray>, context: Context): ParserResult? {
+        for (leaf in leaves) {
             val format = matchFormatAtStart(leaf) ?: continue
 
             val endIndex = when (format) {

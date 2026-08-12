@@ -1,6 +1,7 @@
 package com.kogen.giraffe.analizer.parsers
 
 import com.google.common.truth.Truth.assertThat
+import com.kogen.giraffe.analizer.utils.ProtoWireScanner
 import com.kogen.giraffe.testutil.fakeContext
 import com.kogen.giraffe.testutil.lengthDelimitedField
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
@@ -32,7 +33,7 @@ class GiraffeVideoParserTest {
         val originalBytes = lengthDelimitedField(fieldNumber = 3, payload = mp4Bytes)
         val context = fakeContext(tempFolder.root)
 
-        val result = parser.parse(originalBytes, context)
+        val result = parser.parse(ProtoWireScanner().findBinaryLeaves(originalBytes), context)
 
         assertThat(result).isNotNull()
         assertThat(result!!.contentType).isEqualTo(GiraffeContentType.Video)
@@ -48,6 +49,6 @@ class GiraffeVideoParserTest {
         val originalBytes = lengthDelimitedField(fieldNumber = 3, payload = ByteArray(30) { (it % 7).toByte() })
         val context = fakeContext(tempFolder.root)
 
-        assertThat(parser.parse(originalBytes, context)).isNull()
+        assertThat(parser.parse(ProtoWireScanner().findBinaryLeaves(originalBytes), context)).isNull()
     }
 }

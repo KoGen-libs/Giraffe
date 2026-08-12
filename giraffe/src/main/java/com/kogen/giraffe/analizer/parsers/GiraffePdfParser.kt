@@ -2,7 +2,6 @@ package com.kogen.giraffe.analizer.parsers
 
 import android.content.Context
 import com.kogen.giraffe.analizer.utils.MediaSignatures
-import com.kogen.giraffe.analizer.utils.ProtoWireScanner
 import com.kogen.giraffe.analizer.utils.saveMediaToCache
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 
@@ -12,8 +11,8 @@ import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
  * only the final one marks the true end of the file.
  */
 internal class GiraffePdfParser : ContentParser {
-    override fun parse(originalBytes: ByteArray, context: Context): ParserResult? {
-        for (leaf in ProtoWireScanner().findBinaryLeaves(originalBytes)) {
+    override fun parse(leaves: List<ByteArray>, context: Context): ParserResult? {
+        for (leaf in leaves) {
             if (!MediaSignatures.matchesAt(leaf, 0, MediaSignatures.PDF)) continue
 
             val endIndex = MediaSignatures.findLastEndOfMedia(leaf, 0, MediaSignatures.PDF_EOF)
