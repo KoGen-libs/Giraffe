@@ -42,10 +42,14 @@ android {
 }
 
 dependencies {
-    // Only what's needed to implement io.grpc.ClientInterceptor's surface - no Room, no Compose,
-    // no media3/Coil: this artifact does nothing, so it carries none of the real module's weight
-    // into a release APK that mistakenly depends on it instead of ":giraffe" (io.github.eugenprog:giraffe).
+    // Only what's needed to implement the real module's public interceptor types
+    // (io.grpc.ClientInterceptor, okhttp3.Interceptor, Ktor's client plugin API) - no Room, no
+    // Compose, no media3/Coil: this artifact does nothing, so it carries none of the real
+    // module's weight into a release APK that mistakenly depends on it instead of ":giraffe"
+    // (io.github.eugenprog:giraffe).
     implementation(libs.grpc.stub)
+    implementation(libs.okhttp)
+    implementation(libs.ktor.client.core)
 }
 
 afterEvaluate {

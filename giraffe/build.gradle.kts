@@ -70,6 +70,11 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.grpc.stub)
     implementation(libs.grpc.protobuf)
+    // REST interceptors: OkHttp (also covers Retrofit, which is built on it) and Ktor's client
+    // core - a consumer only using one of grpc/OkHttp/Ktor still pulls in all three client
+    // libraries' interface types via this module, same tradeoff already accepted for grpc-stub.
+    implementation(libs.okhttp)
+    implementation(libs.ktor.client.core)
 
     implementation(libs.kogen.di)
     ksp(libs.kogen.di.compiler)
