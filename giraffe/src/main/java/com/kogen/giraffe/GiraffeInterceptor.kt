@@ -20,9 +20,11 @@ import io.grpc.ForwardingClientCallListener
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.Status
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -67,7 +69,17 @@ class GiraffeInterceptor(
      */
     private val isEnabled = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
-    private val scope = CoroutineScope(Dispatchers.Default)
+    // SupervisorJob so one call's logging failure can't cancel every other in-flight (or future)
+    // launch on this scope - without it, an uncaught exception poisons the shared Job and every
+    // subsequent scope.launch would be dead-on-arrival for the rest of the process's lifetime.
+    // CoroutineExceptionHandler is the last-resort net: this whole class is a passive debug
+    // observer, so nothing it does should ever be able to crash the host app it's attached to -
+    // better to silently drop one piece of diagnostic data than take the app down over it.
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, throwable ->
+            Log.w(TAG, "Unexpected error in Giraffe's traffic logging - ignoring it", throwable)
+        }
+    )
     private lateinit var giraffeLogDao: GiraffeLogDao
     private lateinit var notificationService: GiraffeNotificationService
     private lateinit var analyzer: GiraffeMessageAnalyzer
@@ -81,7 +93,7 @@ class GiraffeInterceptor(
             scope.launch {
                 // A call that was mid-flight when the process died would otherwise stay
                 // "InProgress" forever; flag any such rows as Interrupted on every fresh start.
-                giraffeLogDao.sanitizeStuckChats()
+                persist("sanitizeStuckChats") { giraffeLogDao.sanitizeStuckChats() }
             }
         }
     }
@@ -219,12 +231,18 @@ class GiraffeInterceptor(
                     "text=${analysis?.textContent}"
             )
 
-            notificationService.sendTrafficNotification(
-                methodName = method,
-                host = host,
-                message = analysis?.textContent ?: message.toString(),
-                notificationId = chatId,
-            )
+            try {
+                notificationService.sendTrafficNotification(
+                    methodName = method,
+                    host = host,
+                    message = analysis?.textContent ?: message.toString(),
+                    notificationId = chatId,
+                )
+            } catch (e: Exception) {
+                // A failed notification shouldn't also take the DB write below down with it -
+                // each side effect here is independently best-effort.
+                Log.w(TAG, "Failed to post traffic notification for chatId=$chatId", e)
+            }
 
             if (analysis != null) {
                 val dbMessage = GiraffeMessageEntity(
