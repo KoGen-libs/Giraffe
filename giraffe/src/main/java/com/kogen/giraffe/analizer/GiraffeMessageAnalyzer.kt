@@ -26,7 +26,7 @@ private const val MAX_DB_TEXT_LENGTH = 500_000
  * unreadable.
  */
 @KoGenComponent(true)
-class GiraffeMessageAnalyzer(
+internal class GiraffeMessageAnalyzer(
     private val context: Context,
 ) {
 

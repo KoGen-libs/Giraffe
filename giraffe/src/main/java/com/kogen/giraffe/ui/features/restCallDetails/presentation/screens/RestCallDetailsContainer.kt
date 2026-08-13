@@ -24,7 +24,7 @@ import kz.evko.navigation.annotation.KoGenScreen
  */
 @KoGenScreen
 @Composable
-fun RestCallDetailsContainer(
+internal fun RestCallDetailsContainer(
     navController: NavHostController,
     callId: String,
 ) {

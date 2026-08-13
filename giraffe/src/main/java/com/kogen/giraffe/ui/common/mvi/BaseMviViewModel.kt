@@ -13,11 +13,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Marker for a user/UI-triggered intent dispatched to a [BaseMviViewModel]. */
-interface UiAction
+internal interface UiAction
 /** Marker for a screen's observable state, held by a [BaseMviViewModel]. */
-interface UiState
+internal interface UiState
 /** Marker for a one-shot side effect (navigation, etc.) emitted by a [BaseMviViewModel]. */
-interface UiEffect
+internal interface UiEffect
 
 /**
  * Base MVI ViewModel shared by every feature screen: holds a single [state] [kotlinx.coroutines.flow.StateFlow]
@@ -25,7 +25,7 @@ interface UiEffect
  * dropped if emitted before a collector attaches, but also aren't replayed to a later collector).
  * Subclasses implement [handleAction] and drive state via [updateState]/[emitEffect].
  */
-abstract class BaseMviViewModel<A : UiAction, S : UiState, E : UiEffect>(
+internal abstract class BaseMviViewModel<A : UiAction, S : UiState, E : UiEffect>(
     initialState: S
 ) : ViewModel() {
 

@@ -18,7 +18,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index(value = [CALL_ID])]
 )
-data class GiraffeRestHeaderEntity(
+internal data class GiraffeRestHeaderEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val callId: String,
     val isResponse: Boolean,

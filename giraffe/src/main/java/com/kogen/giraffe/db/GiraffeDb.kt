@@ -32,7 +32,7 @@ import kz.evko.kogen_di.annotations.KoGenBean
     exportSchema = false,
 )
 @TypeConverters(GiraffeConverters::class)
-abstract class GiraffeDb : RoomDatabase() {
+internal abstract class GiraffeDb : RoomDatabase() {
     abstract fun giraffeLogDao(): GiraffeLogDao
     abstract fun giraffeRestLogDao(): GiraffeRestLogDao
 }

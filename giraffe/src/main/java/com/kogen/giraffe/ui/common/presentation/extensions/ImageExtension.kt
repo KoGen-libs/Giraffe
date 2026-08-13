@@ -7,7 +7,7 @@ import android.graphics.BitmapFactory
  * bitmap) to size a message's image bubble before the full image has loaded. Returns `null` if
  * the file isn't a decodable image.
  */
-fun decodeImageAspectRatio(path: String): Float? {
+internal fun decodeImageAspectRatio(path: String): Float? {
     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeFile(path, options)
     if (options.outWidth <= 0 || options.outHeight <= 0) return null

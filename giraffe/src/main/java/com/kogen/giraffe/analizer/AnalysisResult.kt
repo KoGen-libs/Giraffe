@@ -7,7 +7,7 @@ import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
  * carries, its text representation (with any embedded media already replaced by a placeholder),
  * and the file path where extracted media (if any) was cached to disk.
  */
-data class AnalysisResult(
+internal data class AnalysisResult(
     val contentType: GiraffeContentType,
     val textContent: String?,
     val filePath: String?,

@@ -182,7 +182,7 @@ internal object MediaSignatures {
 }
 
 /** Writes [bytes] to a uniquely-named file under `cacheDir/giraffe_media`, returning its absolute path, or `null` on I/O failure. */
-fun saveMediaToCache(
+internal fun saveMediaToCache(
     context: Context,
     bytes: ByteArray,
     prefix: String,

@@ -16,7 +16,7 @@ import kz.evko.kogen_di.annotations.KoGenBean
 
 /** Room DAO for Giraffe's REST traffic log - the HTTP counterpart to [GiraffeLogDao]; call rows cascade-delete their headers/messages (see the entities' foreign keys). */
 @Dao
-interface GiraffeRestLogDao {
+internal interface GiraffeRestLogDao {
     @Transaction
     @Query("SELECT * FROM giraffe_rest_call ORDER BY timestamp DESC")
     fun getAllRestCallsWithDetails(): Flow<List<RestCallWithDetails>>

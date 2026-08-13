@@ -9,7 +9,7 @@ import android.content.Context
  * registered parser in turn against that same [leaves] list until one matches - so a message with
  * N parsers doesn't pay for N redundant wire-format scans.
  */
-interface ContentParser {
+internal interface ContentParser {
     /** Returns a [ParserResult] if this parser recognizes and extracts media from [leaves], or `null` if it doesn't apply. */
     fun parse(leaves: List<ByteArray>, context: Context): ParserResult?
 }

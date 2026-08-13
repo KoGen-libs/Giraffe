@@ -27,7 +27,7 @@ import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
     ],
     indices = [Index(value = [CALL_ID])]
 )
-data class GiraffeRestMessageEntity(
+internal data class GiraffeRestMessageEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val callId: String,
     val isIncoming: Boolean,

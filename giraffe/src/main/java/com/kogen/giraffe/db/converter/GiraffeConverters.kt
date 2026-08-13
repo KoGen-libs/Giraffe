@@ -5,7 +5,7 @@ import com.kogen.giraffe.ui.common.domain.models.GiraffeChatStatus
 import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
 
 /** Room [TypeConverter]s for storing [GiraffeContentType]/[GiraffeChatStatus] enums as their name strings. */
-class GiraffeConverters {
+internal class GiraffeConverters {
     @TypeConverter
     fun fromContentType(value: GiraffeContentType): String = value.name
 

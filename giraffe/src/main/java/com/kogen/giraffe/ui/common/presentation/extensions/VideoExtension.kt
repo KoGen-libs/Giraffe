@@ -6,7 +6,7 @@ import android.media.MediaMetadataRetriever
  * Mirrors [decodeImageAspectRatio], but for video files - used to size a video message's
  * thumbnail bubble before the frame itself has finished decoding.
  */
-fun decodeVideoAspectRatio(path: String): Float? {
+internal fun decodeVideoAspectRatio(path: String): Float? {
     val retriever = MediaMetadataRetriever()
     return try {
         retriever.setDataSource(path)

@@ -32,7 +32,7 @@ private data class PendingDetailsTarget(val id: String, val isRestCall: Boolean)
  * fresh or is already on top (`singleTask`/[onNewIntent]).
  */
 @SuppressLint("RestrictedApi")
-class GiraffeActivity : ComponentActivity() {
+internal class GiraffeActivity : ComponentActivity() {
     // Replay=1 so a target delivered before the NavHost's collector is up (e.g. arriving with
     // the very Intent that creates this Activity) isn't lost.
     private val _pendingTarget = MutableSharedFlow<PendingDetailsTarget>(replay = 1)

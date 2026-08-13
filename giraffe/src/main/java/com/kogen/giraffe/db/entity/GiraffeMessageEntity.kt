@@ -19,7 +19,7 @@ import com.kogen.giraffe.ui.common.domain.models.GiraffeContentType
     ],
     indices = [Index(value = [CHAT_ID])]
 )
-data class GiraffeMessageEntity(
+internal data class GiraffeMessageEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val chatId: String,
     val isIncoming: Boolean,

@@ -18,7 +18,7 @@ import kz.evko.navigation.annotation.KoGenScreen
  */
 @KoGenScreen(startDestination = true)
 @Composable
-fun ChatListContainer(
+internal fun ChatListContainer(
     navController: NavHostController,
 ) {
     ScreenContainerWrapper(

@@ -17,7 +17,7 @@ import kz.evko.kogen_di.annotations.KoGenBean
 
 /** Room DAO for Giraffe's traffic log; chat rows cascade-delete their headers/messages (see the entities' foreign keys). */
 @Dao
-interface GiraffeLogDao {
+internal interface GiraffeLogDao {
     @Transaction
     @Query("SELECT * FROM giraffe_chat ORDER BY timestamp DESC")
     fun getAllChatsWithDetails(): Flow<List<ChatWithDetails>>

@@ -15,7 +15,7 @@ private const val CHANNEL_ID = "grpc_traffic_channel"
 
 /** Posts one system notification per gRPC message or finished REST call, tapping it opens [GiraffeActivity] on that call's detail screen. */
 @KoGenComponent(true)
-class GiraffeNotificationService(private val context: Context) {
+internal class GiraffeNotificationService(private val context: Context) {
 
     init {
         createNotificationChannel(context)

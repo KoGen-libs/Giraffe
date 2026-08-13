@@ -5,7 +5,7 @@ package com.kogen.giraffe.ui.common.domain.models
  * [com.kogen.giraffe.analizer.GiraffeMessageAnalyzer]. [Unknown] covers both plain unstructured
  * text and unrecognized binary media - [PlainText] isn't currently produced by the analyzer.
  */
-enum class GiraffeContentType {
+internal enum class GiraffeContentType {
     PlainText,
     Json,
     Image,

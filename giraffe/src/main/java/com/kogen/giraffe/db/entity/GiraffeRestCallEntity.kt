@@ -17,7 +17,7 @@ const val CALL_ID = "callId"
  * "sometimes-null-depending-on-another-column" shape normalization steers away from.
  */
 @Entity(tableName = "giraffe_rest_call")
-data class GiraffeRestCallEntity(
+internal data class GiraffeRestCallEntity(
     @PrimaryKey val callId: String,
     val url: String,
     val httpMethod: String,

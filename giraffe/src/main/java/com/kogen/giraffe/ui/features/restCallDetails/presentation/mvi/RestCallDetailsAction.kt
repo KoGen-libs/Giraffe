@@ -3,7 +3,7 @@ package com.kogen.giraffe.ui.features.restCallDetails.presentation.mvi
 import com.kogen.giraffe.ui.common.mvi.UiAction
 
 /** User-triggered intents on the REST call details screen. */
-sealed interface RestCallDetailsAction : UiAction {
+internal sealed interface RestCallDetailsAction : UiAction {
     data class LoadRestCallDetails(val id: String) : RestCallDetailsAction
     data object NavigateBack : RestCallDetailsAction
     data class SelectTab(val tab: RestCallTab) : RestCallDetailsAction

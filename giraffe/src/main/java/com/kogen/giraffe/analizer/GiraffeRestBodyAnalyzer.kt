@@ -20,7 +20,7 @@ private const val MIN_UNKNOWN_BODY_SIZE = 128
  * when that header is missing or too generic to say anything ([classify] returns
  * [GiraffeContentType.Unknown]).
  */
-class GiraffeRestBodyAnalyzer {
+internal class GiraffeRestBodyAnalyzer {
 
     fun analyze(contentType: String?, bytes: ByteArray, context: Context): AnalysisResult {
         val declared = classify(contentType)

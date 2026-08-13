@@ -18,7 +18,7 @@ import com.kogen.giraffe.ui.common.main.TextPrimaryColor
 
 /** Empty-state placeholder shown in place of an empty chat list or an empty chat's message list. */
 @Composable
-fun NoContentView() {
+internal fun NoContentView() {
     Box(
         modifier = Modifier
             .fillMaxWidth()

@@ -15,7 +15,7 @@ import kz.evko.navigation.annotation.KoGenScreen
  */
 @KoGenScreen
 @Composable
-fun PdfPreviewContainer(
+internal fun PdfPreviewContainer(
     navController: NavHostController,
     filePath: String,
 ) {

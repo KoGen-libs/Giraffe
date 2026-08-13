@@ -5,7 +5,7 @@ import com.kogen.giraffe.ui.common.mvi.UiState
 import com.kogen.giraffe.ui.common.presentation.AudioPlaybackState
 
 /** Which side of the call the details screen is currently showing - the Chucker-style Request/Response tabs. */
-enum class RestCallTab {
+internal enum class RestCallTab {
     Request,
     Response,
 }
