@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
  * A tiny in-memory stand-in for [GiraffeLogDao], used to test the service/use-case layers above
  * it without spinning up a real Room database.
  */
-class FakeGiraffeLogDao : GiraffeLogDao {
+internal class FakeGiraffeLogDao : GiraffeLogDao {
 
     val insertedChats = mutableListOf<GiraffeChatEntity>()
     val insertedHeaders = mutableListOf<GiraffeHeaderEntity>()
