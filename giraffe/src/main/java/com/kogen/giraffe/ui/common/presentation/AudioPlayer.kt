@@ -1,9 +1,12 @@
 package com.kogen.giraffe.ui.common.presentation
 
 import android.media.MediaPlayer
+import android.util.Log
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,6 +14,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kz.evko.kogen_di.annotations.KoGenComponent
 import kotlin.time.Duration.Companion.milliseconds
+
+private val TAG = AudioPlayer::class.java.simpleName
 
 /** Observable playback state for whichever voice message is currently loaded, if any. */
 internal data class AudioPlaybackState(
@@ -28,7 +33,16 @@ internal data class AudioPlaybackState(
 internal class AudioPlayer {
     private var mediaPlayer: MediaPlayer? = null
     private var progressJob: Job? = null
-    private val scope = CoroutineScope(Dispatchers.Main.immediate)
+
+    // SupervisorJob so a failure in one operation (or one tick of the progress loop) can't poison
+    // the scope for every later one. CoroutineExceptionHandler is the last-resort net - this is a
+    // passive debug feature, so nothing it does should ever be able to crash the host app, no
+    // matter what state the underlying MediaPlayer ends up in.
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Main.immediate + CoroutineExceptionHandler { _, throwable ->
+            Log.w(TAG, "Unexpected error in Giraffe's audio player - ignoring it", throwable)
+        }
+    )
 
     private val _state = MutableStateFlow(AudioPlaybackState())
     val state: StateFlow<AudioPlaybackState> = _state.asStateFlow()
@@ -42,14 +56,21 @@ internal class AudioPlayer {
 
         release()
 
-        val player = MediaPlayer().apply {
-            setDataSource(filePath)
-            setOnCompletionListener {
-                stopProgressLoop()
-                _state.value = _state.value.copy(isPlaying = false, currentPositionMs = 0)
+        val player = try {
+            MediaPlayer().apply {
+                setDataSource(filePath)
+                setOnCompletionListener {
+                    stopProgressLoop()
+                    _state.value = _state.value.copy(isPlaying = false, currentPositionMs = 0)
+                }
+                prepare()
+                start()
             }
-            prepare()
-            start()
+        } catch (e: Exception) {
+            // setDataSource/prepare throw for a file that's missing, corrupt, or an unsupported
+            // format - not something worth crashing the host app over.
+            Log.w(TAG, "Failed to start playback for $filePath", e)
+            return
         }
         mediaPlayer = player
 
@@ -64,8 +85,10 @@ internal class AudioPlayer {
 
     /** Pauses playback without releasing the player, so [play] can resume from the same position. */
     fun pause() {
-        mediaPlayer?.let {
-            if (it.isPlaying) it.pause()
+        safely("pause") {
+            mediaPlayer?.let {
+                if (it.isPlaying) it.pause()
+            }
         }
         stopProgressLoop()
         _state.value = _state.value.copy(isPlaying = false)
@@ -73,16 +96,20 @@ internal class AudioPlayer {
 
     /** Resumes a paused player at its current position. */
     fun resume() {
-        mediaPlayer?.let {
-            it.start()
-            _state.value = _state.value.copy(isPlaying = true)
-            startProgressLoop()
+        safely("resume") {
+            mediaPlayer?.let {
+                it.start()
+                _state.value = _state.value.copy(isPlaying = true)
+                startProgressLoop()
+            }
         }
     }
 
     /** Jumps to [positionMs] in the current track, e.g. from dragging the waveform. */
     fun seekTo(positionMs: Int) {
-        mediaPlayer?.seekTo(positionMs)
+        safely("seekTo") {
+            mediaPlayer?.seekTo(positionMs)
+        }
         _state.value = _state.value.copy(currentPositionMs = positionMs)
     }
 
@@ -96,7 +123,9 @@ internal class AudioPlayer {
      */
     fun release() {
         stopProgressLoop()
-        mediaPlayer?.release()
+        safely("release") {
+            mediaPlayer?.release()
+        }
         mediaPlayer = null
         _state.value = AudioPlaybackState()
     }
@@ -106,7 +135,14 @@ internal class AudioPlayer {
         stopProgressLoop()
         progressJob = scope.launch {
             while (true) {
-                val pos = mediaPlayer?.currentPosition ?: break
+                val pos = try {
+                    mediaPlayer?.currentPosition ?: break
+                } catch (e: Exception) {
+                    // getCurrentPosition() throws IllegalStateException if the player ends up in
+                    // an unexpected state between ticks - stop polling rather than spin on it.
+                    Log.w(TAG, "Failed to read playback position - stopping progress updates", e)
+                    break
+                }
                 _state.value = _state.value.copy(currentPositionMs = pos)
                 delay(100.milliseconds)
             }
@@ -116,5 +152,14 @@ internal class AudioPlayer {
     private fun stopProgressLoop() {
         progressJob?.cancel()
         progressJob = null
+    }
+
+    /** Runs a [MediaPlayer] call that can throw `IllegalStateException` depending on the player's current state, logging and ignoring any failure instead of crashing the host app over it. */
+    private inline fun safely(what: String, action: () -> Unit) {
+        try {
+            action()
+        } catch (e: Exception) {
+            Log.w(TAG, "MediaPlayer operation failed: $what - ignoring it", e)
+        }
     }
 }

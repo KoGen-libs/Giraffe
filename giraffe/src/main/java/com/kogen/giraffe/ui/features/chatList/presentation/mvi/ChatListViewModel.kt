@@ -1,6 +1,5 @@
 package com.kogen.giraffe.ui.features.chatList.presentation.mvi
 
-import androidx.lifecycle.viewModelScope
 import com.kogen.giraffe.ui.common.domain.models.GiraffeChatStatus
 import com.kogen.giraffe.ui.common.domain.models.GiraffeLogEntry
 import com.kogen.giraffe.ui.common.mvi.BaseMviViewModel
@@ -9,7 +8,6 @@ import com.kogen.giraffe.ui.features.chatList.domain.useCases.LoadChatListUseCas
 import com.kogen.giraffe.ui.features.restCallList.domain.useCases.DeleteRestCallsByIdUseCase
 import com.kogen.giraffe.ui.features.restCallList.domain.useCases.LoadRestCallListUseCase
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
 import kz.evko.kogen_di.annotations.KoGenViewModel
 
 /**
@@ -26,7 +24,7 @@ internal class ChatListViewModel(
     ChatListState()
 ) {
     init {
-        viewModelScope.launch {
+        launchSafely {
             combine(
                 loadChatListUseCase.execute(),
                 loadRestCallListUseCase.execute(),

@@ -35,10 +35,20 @@ internal abstract class BaseMviViewModel<A : UiAction, S : UiState, E : UiEffect
     private val _effects = Channel<E>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
-    /** Entry point called by [com.kogen.giraffe.ui.common.ScreenContainerWrapper] for every UI-dispatched action. */
+    /**
+     * Entry point called by [com.kogen.giraffe.ui.common.ScreenContainerWrapper] for every
+     * UI-dispatched action - typically straight off a Compose click handler, so an uncaught
+     * exception here would crash synchronously on the UI thread. Giraffe is a passive debug
+     * observer bolted onto someone else's app; nothing it does should be able to take that app
+     * down, so [handleAction] is never allowed to propagate.
+     */
     fun dispatch(action: A) {
         logAction(action)
-        handleAction(action)
+        try {
+            handleAction(action)
+        } catch (e: Exception) {
+            Log.w("MVI_ERROR", "Unexpected error handling ${action::class.simpleName} - ignoring it", e)
+        }
     }
 
     protected abstract fun handleAction(action: A)
@@ -49,7 +59,24 @@ internal abstract class BaseMviViewModel<A : UiAction, S : UiState, E : UiEffect
 
     protected fun emitEffect(effect: E) {
         logEffect(effect)
-        viewModelScope.launch { _effects.send(effect) }
+        launchSafely { _effects.send(effect) }
+    }
+
+    /**
+     * Launches [block] on [viewModelScope], swallowing (and logging) any uncaught exception
+     * instead of letting it crash the host app - the same reasoning as [dispatch], for a screen's
+     * own background work (streaming state from a use case, forwarding an effect, etc.). Use this
+     * instead of a bare `viewModelScope.launch` for anything that isn't already its own try/catch
+     * (like [wrappedRequest] below).
+     */
+    protected fun launchSafely(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: Exception) {
+                Log.w("MVI_ERROR", "Unexpected error in a background coroutine - ignoring it", e)
+            }
+        }
     }
 
     private fun logAction(action: A) {

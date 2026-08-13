@@ -1,10 +1,8 @@
 package com.kogen.giraffe.ui.features.restCallDetails.presentation.mvi
 
-import androidx.lifecycle.viewModelScope
 import com.kogen.giraffe.ui.common.mvi.BaseMviViewModel
 import com.kogen.giraffe.ui.common.presentation.AudioPlayer
 import com.kogen.giraffe.ui.features.restCallDetails.domain.useCases.LoadRestCallDetailsUseCase
-import kotlinx.coroutines.launch
 import kz.evko.kogen_di.annotations.KoGenViewModel
 
 /** ViewModel for the REST call details screen: streams the selected call's details and drives voice-message playback - the HTTP counterpart to [com.kogen.giraffe.ui.features.chatDetails.presentation.mvi.ChatDetailsViewModel]. */
@@ -17,7 +15,7 @@ internal class RestCallDetailsViewModel(
 ) {
 
     init {
-        viewModelScope.launch {
+        launchSafely {
             loadRestCallDetailsUseCase.restCallDetails.collect { call ->
                 updateState {
                     it.copy(call = call)
@@ -25,7 +23,7 @@ internal class RestCallDetailsViewModel(
             }
         }
 
-        viewModelScope.launch {
+        launchSafely {
             audioPlayer.state.collect { playback ->
                 updateState {
                     it.copy(audioPlayback = playback)
