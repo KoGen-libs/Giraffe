@@ -13,7 +13,7 @@ import kz.evko.kogen_di.annotations.KoGenComponent
 import kotlin.time.Duration.Companion.milliseconds
 
 /** Observable playback state for whichever voice message is currently loaded, if any. */
-data class AudioPlaybackState(
+internal data class AudioPlaybackState(
     val filePath: String? = null,
     val isPlaying: Boolean = false,
     val currentPositionMs: Int = 0,
@@ -25,7 +25,7 @@ data class AudioPlaybackState(
  * shared (rather than one per message bubble) since only one voice message can play at a time.
  */
 @KoGenComponent(true)
-class AudioPlayer {
+internal class AudioPlayer {
     private var mediaPlayer: MediaPlayer? = null
     private var progressJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Main.immediate)
@@ -86,7 +86,14 @@ class AudioPlayer {
         _state.value = _state.value.copy(currentPositionMs = positionMs)
     }
 
-    /** Releases the underlying [MediaPlayer] and resets to an empty [state] - must be called when the owning screen is torn down. */
+    /**
+     * Releases the underlying [MediaPlayer] and resets to an empty [state]. [AudioPlayer] is a
+     * single shared instance used by more than one details screen (gRPC and REST both play voice
+     * messages through it) - a consuming screen's own teardown should call [pause] instead, so
+     * leaving one screen doesn't tear down playback state a *different* currently-visible screen
+     * might still own. [play] already calls this itself before loading a new track, so nothing
+     * outside [AudioPlayer] normally needs to call it directly.
+     */
     fun release() {
         stopProgressLoop()
         mediaPlayer?.release()

@@ -87,7 +87,10 @@ internal class ChatDetailsViewModel(
     }
 
     override fun onCleared() {
-        audioPlayer.release()
+        // audioPlayer is a shared singleton (also used by RestCallDetailsViewModel) - pause
+        // rather than release, so leaving this screen doesn't tear down playback state a
+        // different, currently-visible details screen might still own.
+        audioPlayer.pause()
         super.onCleared()
     }
 }
