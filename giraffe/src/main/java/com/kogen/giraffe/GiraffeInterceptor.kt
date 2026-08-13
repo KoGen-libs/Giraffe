@@ -113,15 +113,7 @@ class GiraffeInterceptor(
                 chatReadyJob = scope.launch {
                     val chat = chatStub(chatId, url, methodShortName)
 
-                    val reqHeaders = headers.keys().map { keyName ->
-                        val key = Metadata.Key.of(keyName, Metadata.ASCII_STRING_MARSHALLER)
-                        GiraffeHeaderEntity(
-                            chatId = chatId.toString(),
-                            isResponse = false,
-                            key = keyName,
-                            value = headers.get(key) ?: ""
-                        )
-                    }
+                    val reqHeaders = headerEntities(chatId, headers, isResponse = false)
 
                     log(
                         "▶ START method=$methodShortName\n" +
@@ -153,16 +145,7 @@ class GiraffeInterceptor(
                             scope.launch {
                                 chatReadyJob?.join()
 
-                                val respHeaders = trailers.keys().map { keyName ->
-                                    val key =
-                                        Metadata.Key.of(keyName, Metadata.ASCII_STRING_MARSHALLER)
-                                    GiraffeHeaderEntity(
-                                        chatId = chatId.toString(),
-                                        isResponse = true,
-                                        key = keyName,
-                                        value = trailers.get(key).orEmpty(),
-                                    )
-                                }
+                                val respHeaders = headerEntities(chatId, trailers, isResponse = true)
 
                                 val chatStatus =
                                     if (status.isOk || status.code == Status.Code.CANCELLED) GiraffeChatStatus.Ok
@@ -292,4 +275,29 @@ class GiraffeInterceptor(
             Log.d(TAG, message)
         }
     }
+}
+
+/**
+ * Builds [GiraffeHeaderEntity] rows from [metadata]'s keys for logging - skipping HTTP/2
+ * pseudo-headers (`:status`, `:path`, etc.) and anything else [Metadata.Key.of] rejects, rather
+ * than crashing the whole call over a header this is purely diagnostic about. [Metadata.Key.of]
+ * throws `IllegalArgumentException` for any key containing `:`, which pseudo-headers always do -
+ * some gRPC transports surface them in [Metadata.keys] even though they're reserved by the HTTP/2
+ * protocol itself, not real metadata. A top-level function (not a member of [GiraffeInterceptor])
+ * so it's testable without needing that class's Context/DI setup.
+ */
+internal fun headerEntities(chatId: UUID, metadata: Metadata, isResponse: Boolean): List<GiraffeHeaderEntity> {
+    return metadata.keys()
+        .filterNot { it.startsWith(":") }
+        .mapNotNull { keyName ->
+            runCatching {
+                val key = Metadata.Key.of(keyName, Metadata.ASCII_STRING_MARSHALLER)
+                GiraffeHeaderEntity(
+                    chatId = chatId.toString(),
+                    isResponse = isResponse,
+                    key = keyName,
+                    value = metadata.get(key).orEmpty(),
+                )
+            }.getOrNull()
+        }
 }
