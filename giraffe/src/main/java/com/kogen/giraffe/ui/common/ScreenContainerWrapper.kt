@@ -16,7 +16,7 @@ import com.kogen.giraffe.ui.common.mvi.UiState
  * `ui.features` package is built on this.
  */
 @Composable
-fun <S : UiState, A : UiAction, E : UiEffect> ScreenContainerWrapper(
+internal fun <S : UiState, A : UiAction, E : UiEffect> ScreenContainerWrapper(
     viewModel: BaseMviViewModel<A, S, E>,
     onEffect: ((E) -> Unit)? = null,
     screenContent: @Composable (S, (A) -> Unit) -> Unit,

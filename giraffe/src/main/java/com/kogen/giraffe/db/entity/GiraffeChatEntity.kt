@@ -9,7 +9,7 @@ const val CHAT_ID = "chatId"
 
 /** One gRPC call: its route, when it started, and its current lifecycle [status]. */
 @Entity(tableName = "giraffe_chat")
-data class GiraffeChatEntity(
+internal data class GiraffeChatEntity(
     @PrimaryKey val chatId: String,
     val url: String,
     val methodShortName: String,

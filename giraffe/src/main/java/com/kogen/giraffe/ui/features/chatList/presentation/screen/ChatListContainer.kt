@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import com.kogen.giraffe.di.koGenViewModel
 import com.kogen.giraffe.navigation.ActionToChatDetails
+import com.kogen.giraffe.navigation.ActionToRestCallDetails
 import com.kogen.giraffe.navigation.navigateSafety
 import com.kogen.giraffe.ui.common.ScreenContainerWrapper
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListEffect
@@ -17,15 +18,19 @@ import kz.evko.navigation.annotation.KoGenScreen
  */
 @KoGenScreen(startDestination = true)
 @Composable
-fun ChatListContainer(
+internal fun ChatListContainer(
     navController: NavHostController,
 ) {
     ScreenContainerWrapper(
         viewModel = koGenViewModel<ChatListViewModel>(),
         onEffect = {
             when (it) {
-                is ChatListEffect.NavigateToDetails -> {
+                is ChatListEffect.NavigateToChatDetails -> {
                     navController.navigateSafety(ActionToChatDetails(it.id))
+                }
+
+                is ChatListEffect.NavigateToRestCallDetails -> {
+                    navController.navigateSafety(ActionToRestCallDetails(it.id))
                 }
             }
         },

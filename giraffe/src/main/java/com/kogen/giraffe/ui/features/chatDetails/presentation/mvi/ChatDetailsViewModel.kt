@@ -1,10 +1,8 @@
 package com.kogen.giraffe.ui.features.chatDetails.presentation.mvi
 
-import androidx.lifecycle.viewModelScope
 import com.kogen.giraffe.ui.common.mvi.BaseMviViewModel
 import com.kogen.giraffe.ui.common.presentation.AudioPlayer
 import com.kogen.giraffe.ui.features.chatDetails.domain.useCases.LoadChatDetailsUseCase
-import kotlinx.coroutines.launch
 import kz.evko.kogen_di.annotations.KoGenViewModel
 
 /** ViewModel for the chat details screen: streams the selected chat's details and drives voice-message playback. */
@@ -18,7 +16,7 @@ internal class ChatDetailsViewModel(
     ) {
 
     init {
-        viewModelScope.launch {
+        launchSafely {
             loadChatDetailsUseCase.chatDetails.collect { chat ->
                 updateState {
                     it.copy(chat = chat)
@@ -26,7 +24,7 @@ internal class ChatDetailsViewModel(
             }
         }
 
-        viewModelScope.launch {
+        launchSafely {
             audioPlayer.state.collect { playback ->
                 updateState {
                     it.copy(audioPlayback = playback)
@@ -87,7 +85,10 @@ internal class ChatDetailsViewModel(
     }
 
     override fun onCleared() {
-        audioPlayer.release()
+        // audioPlayer is a shared singleton (also used by RestCallDetailsViewModel) - pause
+        // rather than release, so leaving this screen doesn't tear down playback state a
+        // different, currently-visible details screen might still own.
+        audioPlayer.pause()
         super.onCleared()
     }
 }

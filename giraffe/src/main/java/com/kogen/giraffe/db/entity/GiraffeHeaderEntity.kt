@@ -18,7 +18,7 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index(value = [CHAT_ID])]
 )
-data class GiraffeHeaderEntity(
+internal data class GiraffeHeaderEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val chatId: String,
     val isResponse: Boolean,

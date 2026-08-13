@@ -36,15 +36,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kogen.giraffe.BuildConfig
 import com.kogen.giraffe.R
-import com.kogen.giraffe.ui.common.domain.models.GiraffeChat
 import com.kogen.giraffe.ui.common.domain.models.GiraffeChatStatus
+import com.kogen.giraffe.ui.common.domain.models.GiraffeLogEntry
 import com.kogen.giraffe.ui.common.domain.models.color
-import com.kogen.giraffe.ui.common.domain.models.icon
+import com.kogen.giraffe.ui.common.domain.models.lastMessagePreview
+import com.kogen.giraffe.ui.common.domain.models.title
 import com.kogen.giraffe.ui.common.main.BGSecondaryColor
 import com.kogen.giraffe.ui.common.main.BackgroundColor
 import com.kogen.giraffe.ui.common.main.PrimaryColor
 import com.kogen.giraffe.ui.common.main.TextPrimaryColor
 import com.kogen.giraffe.ui.common.presentation.NoContentView
+import com.kogen.giraffe.ui.common.presentation.StatusCodeBadge
+import com.kogen.giraffe.ui.common.presentation.StatusLamp
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListAction
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListState
 
@@ -138,7 +141,7 @@ internal fun ChatListScreen(
                             )
                             Spacer(Modifier.width(8.dp))
                             GiraffeCheckbox(
-                                checked = state.selectedIds.size == state.chatList.filter {
+                                checked = state.selectedIds.size == state.entries.filter {
                                     it.status != GiraffeChatStatus.InProgress
                                 }.size,
                                 onCheckedChange = {
@@ -160,17 +163,17 @@ internal fun ChatListScreen(
                 .fillMaxSize(),
             contentPadding = PaddingValues(vertical = 16.dp),
         ) {
-            if (state.chatList.isNotEmpty()) {
+            if (state.entries.isNotEmpty()) {
                 items(
-                    items = state.chatList,
-                    key = { chat -> chat.id },
-                ) { chat ->
+                    items = state.entries,
+                    key = { entry -> entry.id },
+                ) { entry ->
                     Box(
                         modifier = Modifier.animateItem()
                     ) {
                         ChatListItem(
-                            chat = chat,
-                            selectedChats = state.selectedIds,
+                            entry = entry,
+                            selectedIds = state.selectedIds,
                             action = action,
                         )
                     }
@@ -184,11 +187,11 @@ internal fun ChatListScreen(
     }
 }
 
-/** One row in the chat list: status icon, URL, last message preview, and (for completed calls) a selection checkbox. */
+/** One row in the unified call list: status icon, title (gRPC URL or REST "METHOD url"), last message preview, and (for completed calls) a selection checkbox. */
 @Composable
 private fun ChatListItem(
-    chat: GiraffeChat,
-    selectedChats: Set<String>,
+    entry: GiraffeLogEntry,
+    selectedIds: Set<String>,
     action: (ChatListAction) -> Unit,
 ) {
     Column(
@@ -201,32 +204,48 @@ private fun ChatListItem(
                 .fillMaxWidth()
                 .background(BackgroundColor)
                 .clickable {
-                    action(ChatListAction.ShowChatDetails(chat.id))
+                    action(ChatListAction.ShowDetails(entry))
                 }
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                painter = painterResource(chat.status.icon()),
-                contentDescription = null,
-                tint = chat.status.color(),
-                modifier = Modifier.size(24.dp),
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier.size(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    StatusLamp(color = entry.status.color())
+                }
+                // Shown as soon as the response comes back - the lamp alone only tells you
+                // ok/error/in-progress, not the actual code.
+                val httpStatusCode = (entry as? GiraffeLogEntry.Rest)?.call?.httpStatusCode
+                if (httpStatusCode != null) {
+                    Spacer(Modifier.height(2.dp))
+                    StatusCodeBadge(
+                        code = httpStatusCode,
+                        tint = entry.status.color(),
+                    )
+                }
+            }
             Spacer(Modifier.width(8.dp))
             Column(
                 modifier = Modifier
                     .weight(1f),
             ) {
                 Text(
-                    text = chat.url,
+                    text = entry.title,
                     style = TextStyle(
                         fontSize = 16.sp,
                     ),
                     color = TextPrimaryColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = chat.messages.lastOrNull()?.textContent.orEmpty(),
+                    text = entry.lastMessagePreview.orEmpty(),
                     style = TextStyle(
                         fontSize = 14.sp,
                     ),
@@ -235,12 +254,12 @@ private fun ChatListItem(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (chat.status != GiraffeChatStatus.InProgress) {
+            if (entry.status != GiraffeChatStatus.InProgress) {
                 Spacer(Modifier.width(8.dp))
                 GiraffeCheckbox(
-                    checked = selectedChats.contains(chat.id),
+                    checked = selectedIds.contains(entry.id),
                     onCheckedChange = {
-                        action(ChatListAction.SelectChat(chat.id, it))
+                        action(ChatListAction.SelectChat(entry.id, it))
                     },
                 )
             }
@@ -269,7 +288,10 @@ private fun GiraffeCheckbox(
             checkedBoxColor = BackgroundColor,
             uncheckedBoxColor = BackgroundColor,
             checkedBorderColor = PrimaryColor,
-            uncheckedBorderColor = BGSecondaryColor,
+            // Was BGSecondaryColor - nearly the same as the screen background, so an unchecked
+            // box was practically invisible. TextPrimaryColor at reduced opacity reads as a
+            // clear empty checkbox outline without competing with the checked (orange) state.
+            uncheckedBorderColor = TextPrimaryColor.copy(alpha = 0.35f),
         ),
     )
 }

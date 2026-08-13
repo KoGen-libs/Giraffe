@@ -3,7 +3,7 @@ package com.kogen.giraffe.ui.features.chatDetails.presentation.mvi
 import com.kogen.giraffe.ui.common.mvi.UiAction
 
 /** User-triggered intents on the chat details screen. */
-sealed interface ChatDetailsAction : UiAction {
+internal sealed interface ChatDetailsAction : UiAction {
     data class LoadChatDetails(val id: String) : ChatDetailsAction
     data object NavigateBack : ChatDetailsAction
     data object ShowRequestDetail: ChatDetailsAction

@@ -23,7 +23,7 @@ import kz.evko.navigation.annotation.KoGenScreen
  */
 @KoGenScreen
 @Composable
-fun ChatDetailsContainer(
+internal fun ChatDetailsContainer(
     navController: NavHostController,
     chatId: String,
 ) {

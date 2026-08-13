@@ -4,7 +4,7 @@ import androidx.room.Embedded
 import androidx.room.Relation
 
 /** Room relation projection: a [GiraffeChatEntity] joined with all its [headers] and [messages] in one query. */
-data class ChatWithDetails(
+internal data class ChatWithDetails(
     @Embedded val chat: GiraffeChatEntity,
 
     @Relation(parentColumn = CHAT_ID, entityColumn = CHAT_ID)

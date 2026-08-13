@@ -15,7 +15,7 @@ import kz.evko.navigation.annotation.KoGenScreen
  */
 @KoGenScreen
 @Composable
-fun VideoPreviewContainer(
+internal fun VideoPreviewContainer(
     navController: NavHostController,
     filePath: String,
 ) {

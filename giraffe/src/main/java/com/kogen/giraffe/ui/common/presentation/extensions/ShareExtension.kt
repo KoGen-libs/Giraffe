@@ -14,7 +14,7 @@ private const val PROVIDER_AUTHORITY_SUFFIX = ".giraffeprovider"
  * API 24+). Defaults to a generic mime type since files of [com.kogen.giraffe.ui.common.domain.models.GiraffeContentType.Unknown]
  * have no reliable one to infer.
  */
-fun File.shareFile(context: Context, mimeType: String = "*/*") {
+internal fun File.shareFile(context: Context, mimeType: String = "*/*") {
     val authority = context.packageName + PROVIDER_AUTHORITY_SUFFIX
     val uri = FileProvider.getUriForFile(context, authority, this)
 

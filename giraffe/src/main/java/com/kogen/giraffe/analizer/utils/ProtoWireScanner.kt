@@ -4,7 +4,7 @@ package com.kogen.giraffe.analizer.utils
  * Parses arbitrary bytes as protobuf wire format without a `.proto` schema, so embedded media
  * (which has no message definition of its own) can still be located inside a logged message.
  */
-class ProtoWireScanner {
+internal class ProtoWireScanner {
     companion object {
         private const val MIN_MESSAGE_BYTE_COVERAGE = 0.9
     }
@@ -132,7 +132,7 @@ class ProtoWireScanner {
 }
 
 /** One decoded protobuf wire-format field; [bytes] holds the payload for length-delimited (wireType 2) fields, `null` otherwise. */
-data class ProtoField(
+internal data class ProtoField(
     val fieldNumber: Int,
     val wireType: Int,
     val bytes: ByteArray?,

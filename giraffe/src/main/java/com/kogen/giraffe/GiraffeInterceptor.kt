@@ -237,6 +237,7 @@ class GiraffeInterceptor(
                     host = host,
                     message = analysis?.textContent ?: message.toString(),
                     notificationId = chatId,
+                    isRestCall = false,
                 )
             } catch (e: Exception) {
                 // A failed notification shouldn't also take the DB write below down with it -

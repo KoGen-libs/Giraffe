@@ -12,10 +12,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.rememberNavController
 import com.kogen.giraffe.di.setApplicationContext
 import com.kogen.giraffe.navigation.ActionToChatDetails
+import com.kogen.giraffe.navigation.ActionToRestCallDetails
 import com.kogen.giraffe.navigation.AppNavHost
 import com.kogen.giraffe.navigation.navigateSafety
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+
+/** Which details screen a pending deep-link should land on - carried alongside the id since a bare id string can't tell a gRPC chat from a REST call. */
+private data class PendingDetailsTarget(val id: String, val isRestCall: Boolean)
 
 /**
  * Host activity for Giraffe's whole in-app debug UI (chat list, chat details, media previews),
@@ -23,18 +27,19 @@ import kotlinx.coroutines.flow.asSharedFlow
  * notification's tap, or from [GiraffeNotificationService] - rather than something the embedding
  * app starts directly.
  *
- * `EXTRA_CHAT_ID` in the launching [Intent] deep-links straight into that call's details screen,
- * whether the activity is being created fresh or is already on top (`singleTask`/[onNewIntent]).
+ * `EXTRA_CHAT_ID`/`EXTRA_IS_REST_CALL` in the launching [Intent] deep-link straight into that
+ * call's details screen - gRPC's or REST's, per the flag - whether the activity is being created
+ * fresh or is already on top (`singleTask`/[onNewIntent]).
  */
 @SuppressLint("RestrictedApi")
-class GiraffeActivity : ComponentActivity() {
-    // Replay=1 so a chat ID delivered before the NavHost's collector is up (e.g. arriving with
+internal class GiraffeActivity : ComponentActivity() {
+    // Replay=1 so a target delivered before the NavHost's collector is up (e.g. arriving with
     // the very Intent that creates this Activity) isn't lost.
-    private val _pendingChatId = MutableSharedFlow<String>(replay = 1)
-    private val pendingChatId = _pendingChatId.asSharedFlow()
+    private val _pendingTarget = MutableSharedFlow<PendingDetailsTarget>(replay = 1)
+    private val pendingTarget = _pendingTarget.asSharedFlow()
 
-    private fun navigateTo(chatId: String) {
-        _pendingChatId.tryEmit(chatId)
+    private fun navigateTo(chatId: String, isRestCall: Boolean) {
+        _pendingTarget.tryEmit(PendingDetailsTarget(chatId, isRestCall))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,15 +53,19 @@ class GiraffeActivity : ComponentActivity() {
             val navController = rememberNavController()
 
             LaunchedEffect(Unit) {
-                pendingChatId.collect { chatId ->
-                    navController.navigateSafety(ActionToChatDetails(chatId))
+                pendingTarget.collect { target ->
+                    if (target.isRestCall) {
+                        navController.navigateSafety(ActionToRestCallDetails(target.id))
+                    } else {
+                        navController.navigateSafety(ActionToChatDetails(target.id))
+                    }
                 }
             }
 
             AppNavHost(navController = navController)
         }
         intent?.getStringExtra("EXTRA_CHAT_ID")?.let {
-            navigateTo(it)
+            navigateTo(it, intent?.getBooleanExtra("EXTRA_IS_REST_CALL", false) ?: false)
         }
     }
 
@@ -79,7 +88,7 @@ class GiraffeActivity : ComponentActivity() {
         setIntent(intent)
 
         intent.getStringExtra("EXTRA_CHAT_ID")?.let {
-            navigateTo(it)
+            navigateTo(it, intent.getBooleanExtra("EXTRA_IS_REST_CALL", false))
         }
     }
 }

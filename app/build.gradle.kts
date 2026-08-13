@@ -62,6 +62,13 @@ dependencies {
     implementation(libs.grpc.kotlin.stub)
     implementation(libs.protobuf)
 
+    // REST test screen - one client per HTTP stack Giraffe supports, so both interceptors get
+    // real exercise from the UI, not just unit tests.
+    implementation(libs.retrofit)
+    implementation(libs.okhttp)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+
     // Compose
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)

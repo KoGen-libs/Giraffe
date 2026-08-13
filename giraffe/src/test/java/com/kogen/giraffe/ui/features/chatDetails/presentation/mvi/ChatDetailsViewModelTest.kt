@@ -156,12 +156,15 @@ class ChatDetailsViewModelTest {
     }
 
     @Test
-    fun `onCleared releases the audio player`() = runTest(dispatcher) {
+    fun `onCleared pauses (not releases) the shared audio player`() = runTest(dispatcher) {
+        // audioPlayer is a shared singleton also used by RestCallDetailsViewModel - onCleared
+        // must not release it, since a different, still-visible details screen might own it.
         val vm = viewModel()
 
         vm.callOnCleared()
 
-        verify(exactly = 1) { audioPlayer.release() }
+        verify(exactly = 1) { audioPlayer.pause() }
+        verify(exactly = 0) { audioPlayer.release() }
     }
 }
 

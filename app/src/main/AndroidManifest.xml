@@ -12,7 +12,14 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Graffe">
+        android:theme="@style/Theme.Graffe"
+        android:usesCleartextTraffic="true">
+        <!-- This app only ever talks to a local dev server (TestGrpc) over plain http:// on the
+             same LAN - it's never published, so an app-wide allowance is fine here rather than a
+             network security config scoped to specific domains. gRPC's plaintext channel wasn't
+             affected by the OS's cleartext block (different transport stack); OkHttp/Retrofit's
+             REST client was. -->
+
 
         <activity
             android:name=".MainActivity"
