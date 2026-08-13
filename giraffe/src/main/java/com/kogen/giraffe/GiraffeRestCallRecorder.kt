@@ -11,8 +11,10 @@ import com.kogen.giraffe.db.entity.GiraffeRestMessageEntity
 import com.kogen.giraffe.di.inject
 import com.kogen.giraffe.di.setApplicationContext
 import com.kogen.giraffe.ui.common.domain.models.GiraffeChatStatus
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -37,7 +39,18 @@ internal class GiraffeRestCallRecorder(
     /** See [GiraffeInterceptor.isEnabled] - same check, same reasoning, duplicated rather than shared because the two classes otherwise have nothing in common to justify a base class for it. */
     val isEnabled = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
-    private val scope = CoroutineScope(Dispatchers.Default)
+    // SupervisorJob so one call's logging failure can't cancel every other in-flight (or future)
+    // launch on this scope - without it, an uncaught exception poisons the shared Job and every
+    // subsequent scope.launch would be dead-on-arrival for the rest of the process's lifetime.
+    // CoroutineExceptionHandler is the last-resort net: this whole class is a passive debug
+    // observer, so nothing it does should ever be able to crash the host app it's attached to -
+    // better to silently drop one piece of diagnostic data than take the app down over it.
+    // Mirrors GiraffeInterceptor's scope for the same reasoning.
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, throwable ->
+            Log.w(TAG, "Unexpected error in Giraffe's REST traffic logging - ignoring it", throwable)
+        }
+    )
     private val appContext = context.applicationContext
     private lateinit var restLogDao: GiraffeRestLogDao
     private lateinit var notificationService: GiraffeNotificationService
@@ -49,7 +62,11 @@ internal class GiraffeRestCallRecorder(
             restLogDao = inject()
             notificationService = inject()
             scope.launch {
-                restLogDao.sanitizeStuckRestCalls()
+                try {
+                    restLogDao.sanitizeStuckRestCalls()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to sanitize stuck REST calls", e)
+                }
             }
         }
     }
@@ -77,8 +94,24 @@ internal class GiraffeRestCallRecorder(
         if (!isEnabled) return
 
         scope.launch {
-            val requestAnalysis = requestBody?.let { analyzer.analyze(requestContentType, it, appContext) }
-            val responseAnalysis = responseBody?.let { analyzer.analyze(responseContentType, it, appContext) }
+            // Parses arbitrary request/response bytes (images, video, pdf, unknown binaries) -
+            // exactly the kind of code most likely to choke on some edge case, so - unlike this
+            // file's other steps - it wasn't wrapped at all. Mirrors GiraffeInterceptor's
+            // equivalent try/catch around analyzer.analyze().
+            val requestAnalysis = requestBody?.let {
+                try {
+                    analyzer.analyze(requestContentType, it, appContext)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            val responseAnalysis = responseBody?.let {
+                try {
+                    analyzer.analyze(responseContentType, it, appContext)
+                } catch (_: Exception) {
+                    null
+                }
+            }
 
             val status = when {
                 error != null -> GiraffeChatStatus.Error
@@ -93,17 +126,23 @@ internal class GiraffeRestCallRecorder(
                     "response=${responseAnalysis?.textContent}"
             )
 
-            notificationService.sendTrafficNotification(
-                methodName = httpMethod,
-                host = url,
-                message = responseAnalysis?.textContent
-                    ?: requestAnalysis?.textContent
-                    ?: error?.message
-                    ?: httpStatusCode?.toString()
-                    ?: "",
-                notificationId = UUID.fromString(callId),
-                isRestCall = true,
-            )
+            try {
+                notificationService.sendTrafficNotification(
+                    methodName = httpMethod,
+                    host = url,
+                    message = responseAnalysis?.textContent
+                        ?: requestAnalysis?.textContent
+                        ?: error?.message
+                        ?: httpStatusCode?.toString()
+                        ?: "",
+                    notificationId = UUID.fromString(callId),
+                    isRestCall = true,
+                )
+            } catch (e: Exception) {
+                // A failed notification shouldn't also take the DB write below down with it -
+                // each side effect here is independently best-effort.
+                Log.w(TAG, "Failed to post traffic notification for callId=$callId", e)
+            }
 
             val call = GiraffeRestCallEntity(
                 callId = callId,
