@@ -94,15 +94,18 @@ internal class ProtoWireScanner {
                 byteFieldCoverage.toDouble() / payload.size >= MIN_MESSAGE_BYTE_COVERAGE
 
             if (looksLikeRealMessage) {
-                val nestedLeaves = mutableListOf<ByteArray>()
-                collectLeaves(payload, minSize, nestedLeaves)
-                if (nestedLeaves.isNotEmpty()) {
-                    out.addAll(nestedLeaves)
-                    continue
-                }
-                // Looked like a fully-formed nested message (e.g. a run of zero bytes parses as
-                // valid-but-empty wireType=0 fields), but recursing produced no usable bytes —
-                // fall back to treating the whole payload as an opaque leaf instead of losing it.
+                // byteFieldCoverage already ruled out "noise that happens to parse as a message"
+                // (that's exactly what the >= MIN_MESSAGE_BYTE_COVERAGE check above is for - a
+                // run of zero bytes, for instance, parses as all wireType=0 fields with zero
+                // byte-carrying fields, so it never reaches here at all). So if recursing into a
+                // *confirmed* real nested message finds no binary leaves, that's not data lost -
+                // it means every field inside is genuinely text (a very common case: a nested
+                // message that's just a few string fields, like a `{lang, message, recommend}`
+                // struct) and correctly resolves to zero leaves. Falling back to reporting the
+                // whole thing as one opaque "unknown binary" blob here was the actual bug: it
+                // took an all-text nested message and reported it as an unrecognized file.
+                collectLeaves(payload, minSize, out)
+                continue
             }
 
             if (payload.size >= minSize) {

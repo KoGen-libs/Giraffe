@@ -102,6 +102,22 @@ class ProtoWireScannerTest {
     }
 
     @Test
+    fun `findBinaryLeaves finds nothing inside a real nested message whose fields are all text`() {
+        // Reproduces a real false-positive "Unknown file": a nested struct-like message
+        // ({lang, message, recommend}, all plain strings) that legitimately has nothing binary
+        // inside it. byteFieldCoverage for it is ~96% (barely any framing overhead relative to
+        // the text payloads), so it's confidently a real message - the bug was falling back to
+        // reporting the whole thing as one opaque leaf just because recursing into it correctly
+        // found zero *binary* leaves, rather than recognizing that as "nothing binary here".
+        val innerMessage = lengthDelimitedField(fieldNumber = 1, payload = "ru".toByteArray()) +
+            lengthDelimitedField(fieldNumber = 2, payload = "Готово! Вот реквизиты вашего счёта".toByteArray()) +
+            lengthDelimitedField(fieldNumber = 3, payload = "Если хотите, я могу показать баланс ваших счетов".toByteArray())
+        val outerMessage = lengthDelimitedField(fieldNumber = 4, payload = innerMessage)
+
+        assertThat(scanner.findBinaryLeaves(outerMessage)).isEmpty()
+    }
+
+    @Test
     fun `findBinaryLeaves falls back to the raw payload when a noise run parses as an empty message`() {
         // A long run of zero bytes parses "validly" as a chain of empty wireType=0 fields, but
         // carries zero real (wireType=2) bytes, so it must NOT be discarded as a nested message.
