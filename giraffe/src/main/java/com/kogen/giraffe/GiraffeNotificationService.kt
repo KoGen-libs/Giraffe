@@ -11,7 +11,11 @@ import com.kogen.giraffe.ui.common.main.GiraffeActivity
 import kz.evko.kogen_di.annotations.KoGenComponent
 import java.util.UUID
 
-private const val CHANNEL_ID = "grpc_traffic_channel"
+// Renamed (was "grpc_traffic_channel") so devices that already created the old channel get a
+// fresh one with vibration explicitly off - Android channel settings are locked in at creation
+// and can't be changed from code afterwards, only by the user in system settings or by using a
+// new channel id.
+private const val CHANNEL_ID = "giraffe_traffic_channel_v2"
 
 /** Posts one system notification per gRPC message or finished REST call, tapping it opens [GiraffeActivity] on that call's detail screen. */
 @KoGenComponent(true)
@@ -81,6 +85,10 @@ internal class GiraffeNotificationService(private val context: Context) {
         val importance = NotificationManager.IMPORTANCE_HIGH
         val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
             description = descriptionText
+            // Every connection notification was buzzing the device, gRPC and REST alike - kept
+            // explicitly off rather than left unset, since an unset channel can pick up the
+            // device's own default vibration setting instead of truly being silent.
+            enableVibration(false)
         }
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
