@@ -39,7 +39,6 @@ import com.kogen.giraffe.R
 import com.kogen.giraffe.ui.common.domain.models.GiraffeChatStatus
 import com.kogen.giraffe.ui.common.domain.models.GiraffeLogEntry
 import com.kogen.giraffe.ui.common.domain.models.color
-import com.kogen.giraffe.ui.common.domain.models.icon
 import com.kogen.giraffe.ui.common.domain.models.lastMessagePreview
 import com.kogen.giraffe.ui.common.domain.models.title
 import com.kogen.giraffe.ui.common.main.BGSecondaryColor
@@ -47,6 +46,8 @@ import com.kogen.giraffe.ui.common.main.BackgroundColor
 import com.kogen.giraffe.ui.common.main.PrimaryColor
 import com.kogen.giraffe.ui.common.main.TextPrimaryColor
 import com.kogen.giraffe.ui.common.presentation.NoContentView
+import com.kogen.giraffe.ui.common.presentation.StatusCodeBadge
+import com.kogen.giraffe.ui.common.presentation.StatusLamp
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListAction
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListState
 
@@ -208,12 +209,26 @@ private fun ChatListItem(
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                painter = painterResource(entry.status.icon()),
-                contentDescription = null,
-                tint = entry.status.color(),
-                modifier = Modifier.size(24.dp),
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier.size(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    StatusLamp(color = entry.status.color())
+                }
+                // Shown as soon as the response comes back - the lamp alone only tells you
+                // ok/error/in-progress, not the actual code.
+                val httpStatusCode = (entry as? GiraffeLogEntry.Rest)?.call?.httpStatusCode
+                if (httpStatusCode != null) {
+                    Spacer(Modifier.height(2.dp))
+                    StatusCodeBadge(
+                        code = httpStatusCode,
+                        tint = entry.status.color(),
+                    )
+                }
+            }
             Spacer(Modifier.width(8.dp))
             Column(
                 modifier = Modifier
@@ -225,6 +240,8 @@ private fun ChatListItem(
                         fontSize = 16.sp,
                     ),
                     color = TextPrimaryColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -271,7 +288,10 @@ private fun GiraffeCheckbox(
             checkedBoxColor = BackgroundColor,
             uncheckedBoxColor = BackgroundColor,
             checkedBorderColor = PrimaryColor,
-            uncheckedBorderColor = BGSecondaryColor,
+            // Was BGSecondaryColor - nearly the same as the screen background, so an unchecked
+            // box was practically invisible. TextPrimaryColor at reduced opacity reads as a
+            // clear empty checkbox outline without competing with the checked (orange) state.
+            uncheckedBorderColor = TextPrimaryColor.copy(alpha = 0.35f),
         ),
     )
 }

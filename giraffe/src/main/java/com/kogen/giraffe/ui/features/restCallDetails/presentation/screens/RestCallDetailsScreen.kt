@@ -1,6 +1,5 @@
 package com.kogen.giraffe.ui.features.restCallDetails.presentation.screens
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +35,7 @@ import com.kogen.giraffe.R
 import com.kogen.giraffe.ui.common.domain.models.GiraffeHeader
 import com.kogen.giraffe.ui.common.domain.models.GiraffeMessage
 import com.kogen.giraffe.ui.common.domain.models.GiraffeRestCall
+import com.kogen.giraffe.ui.common.domain.models.color
 import com.kogen.giraffe.ui.common.domain.models.request
 import com.kogen.giraffe.ui.common.domain.models.response
 import com.kogen.giraffe.ui.common.domain.models.toClipboardText
@@ -48,6 +48,7 @@ import com.kogen.giraffe.ui.common.presentation.CollapsibleDetailsDrawer
 import com.kogen.giraffe.ui.common.presentation.DetailsDrawerLine
 import com.kogen.giraffe.ui.common.presentation.MessageMediaContent
 import com.kogen.giraffe.ui.common.presentation.NoContentView
+import com.kogen.giraffe.ui.common.presentation.StatusCodeBadge
 import com.kogen.giraffe.ui.common.presentation.extensions.copyToClipboard
 import com.kogen.giraffe.ui.common.presentation.extensions.timestampToDateTime
 import com.kogen.giraffe.ui.features.restCallDetails.presentation.mvi.RestCallDetailsAction
@@ -97,6 +98,10 @@ internal fun RestCallDetailsScreen(
                             contentDescription = null,
                             tint = PrimaryColor,
                         )
+                        state.call?.httpStatusCode?.let { code ->
+                            StatusCodeBadge(code = code, tint = state.call.status.color())
+                            Spacer(Modifier.width(8.dp))
+                        }
                         Text(
                             modifier = Modifier.weight(1f),
                             text = state.call?.url.orEmpty(),
@@ -276,8 +281,12 @@ private fun RestCallSideView(
     )
 }
 
-/** The request/response body itself: text plus any extracted media, full-width (there's no left/right speaker distinction here, unlike the gRPC chat transcript). */
-@SuppressLint("UnusedBoxWithConstraintsScope")
+/**
+ * The request/response body itself, full-width (there's no left/right speaker distinction here,
+ * unlike the gRPC chat transcript). Text (if any) gets its own bubble; media (image/video/file
+ * chip) is rendered directly below rather than nested inside that same bubble - it already draws
+ * its own background/shape, so wrapping it in another one just doubles the framing.
+ */
 @Composable
 private fun RestCallBodyView(
     message: GiraffeMessage?,
@@ -291,40 +300,32 @@ private fun RestCallBodyView(
         return
     }
 
+    val hasText = message.textContent.isNullOrBlank().not()
+    val hasMedia = message.filePath.isNullOrBlank().not()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = BGSecondaryColor,
-                    shape = RoundedCornerShape(12.dp),
-                )
-                .padding(12.dp),
-        ) {
-            Text(
-                text = message.textContent.orEmpty(),
-                style = TextStyle(
-                    fontSize = 14.sp,
-                ),
-                color = TextPrimaryColor,
-            )
-            if (message.filePath.isNullOrBlank().not()) {
-                MessageMediaContent(
-                    message = message,
-                    audioPlayback = audioPlayback,
-                    onImageClick = { filePath -> action(RestCallDetailsAction.ShowImage(filePath)) },
-                    onVideoClick = { filePath -> action(RestCallDetailsAction.ShowVideo(filePath)) },
-                    onPdfClick = { filePath -> action(RestCallDetailsAction.ShowPdf(filePath)) },
-                    onAudioPlayClick = { filePath -> action(RestCallDetailsAction.PlayAudio(filePath)) },
-                    onAudioSeek = { position -> action(RestCallDetailsAction.SeekAudio(position)) },
+        if (hasText) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = BGSecondaryColor,
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                    .padding(12.dp),
+            ) {
+                Text(
+                    text = message.textContent.orEmpty(),
+                    style = TextStyle(
+                        fontSize = 14.sp,
+                    ),
+                    color = TextPrimaryColor,
                 )
             }
-        }
-        if (message.textContent.isNullOrBlank().not()) {
             Spacer(Modifier.height(4.dp))
             Row(
                 modifier = Modifier.padding(start = 4.dp),
@@ -340,6 +341,37 @@ private fun RestCallBodyView(
                     tint = TextPrimaryColor,
                 )
             }
+        }
+
+        if (hasMedia) {
+            if (hasText) {
+                Spacer(Modifier.height(8.dp))
+            }
+            // Same bubble treatment as the text above, just tighter padding and no fillMaxWidth -
+            // a chip (unknown/pdf) hugs its own box instead of floating in a full-width one;
+            // recoloring the chip itself would also affect the gRPC chat bubbles that reuse it.
+            Column(
+                modifier = Modifier
+                    .background(
+                        color = BGSecondaryColor,
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                    .padding(8.dp),
+            ) {
+                MessageMediaContent(
+                    message = message,
+                    audioPlayback = audioPlayback,
+                    onImageClick = { filePath -> action(RestCallDetailsAction.ShowImage(filePath)) },
+                    onVideoClick = { filePath -> action(RestCallDetailsAction.ShowVideo(filePath)) },
+                    onPdfClick = { filePath -> action(RestCallDetailsAction.ShowPdf(filePath)) },
+                    onAudioPlayClick = { filePath -> action(RestCallDetailsAction.PlayAudio(filePath)) },
+                    onAudioSeek = { position -> action(RestCallDetailsAction.SeekAudio(position)) },
+                )
+            }
+        }
+
+        if (!hasText && !hasMedia) {
+            NoContentView()
         }
     }
 }
