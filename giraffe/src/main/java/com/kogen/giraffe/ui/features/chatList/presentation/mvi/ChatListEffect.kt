@@ -1,6 +1,6 @@
 package com.kogen.giraffe.ui.features.chatList.presentation.mvi
 
-import com.kogen.giraffe.ui.common.mvi.UiEffect
+import com.kogen.androidarc.mvi.UiEffect
 
 /** One-shot navigation effects emitted by [ChatListViewModel]. */
 internal sealed interface ChatListEffect: UiEffect {

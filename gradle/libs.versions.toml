@@ -12,6 +12,7 @@ protobufPlugin = "0.10.0"
 coroutines = "1.11.0"
 ksp = "2.1.21-2.0.2"
 kogenDi = "1.0.8"
+androidArc = "1.0.1"
 constraintLayout = "2.2.1"
 composeBom = "2024.12.01"
 activityCompose = "1.9.3"
@@ -46,6 +47,7 @@ grpc-kotlin-stub = { group = "io.grpc", name = "grpc-kotlin-stub", version.ref =
 protobuf = { group = "com.google.protobuf", name = "protobuf-kotlin-lite", version.ref = "protobuf" }
 coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kogen-di = { group = "io.github.eugenprog", name = "android-di", version.ref = "kogenDi" }
+androidarc = { group = "io.github.eugenprog", name = "androidarc", version.ref = "androidArc" }
 kogen-di-compiler = { group = "io.github.eugenprog", name = "android-di-compiler", version.ref = "kogenDi" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintLayout" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }

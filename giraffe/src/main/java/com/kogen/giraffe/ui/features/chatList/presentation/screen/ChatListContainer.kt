@@ -6,7 +6,7 @@ import com.kogen.giraffe.di.koGenViewModel
 import com.kogen.giraffe.navigation.ActionToChatDetails
 import com.kogen.giraffe.navigation.ActionToRestCallDetails
 import com.kogen.giraffe.navigation.navigateSafety
-import com.kogen.giraffe.ui.common.ScreenContainerWrapper
+import com.kogen.androidarc.ui.ScreenContainerWrapper
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListEffect
 import com.kogen.giraffe.ui.features.chatList.presentation.mvi.ChatListViewModel
 import kz.evko.navigation.annotation.KoGenScreen

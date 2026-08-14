@@ -1,7 +1,7 @@
 package com.kogen.giraffe.ui.features.restCallDetails.presentation.mvi
 
 import com.kogen.giraffe.ui.common.domain.models.GiraffeRestCall
-import com.kogen.giraffe.ui.common.mvi.UiState
+import com.kogen.androidarc.mvi.UiState
 import com.kogen.giraffe.ui.common.presentation.AudioPlaybackState
 
 /** Which side of the call the details screen is currently showing - the Chucker-style Request/Response tabs. */
