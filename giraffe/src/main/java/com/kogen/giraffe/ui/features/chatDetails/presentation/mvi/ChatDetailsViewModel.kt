@@ -1,6 +1,6 @@
 package com.kogen.giraffe.ui.features.chatDetails.presentation.mvi
 
-import com.kogen.giraffe.ui.common.mvi.BaseMviViewModel
+import com.kogen.androidarc.mvi.BaseMviViewModel
 import com.kogen.giraffe.ui.common.presentation.AudioPlayer
 import com.kogen.giraffe.ui.features.chatDetails.domain.useCases.LoadChatDetailsUseCase
 import kz.evko.kogen_di.annotations.KoGenViewModel

@@ -1,6 +1,6 @@
 package com.kogen.giraffe.ui.features.restCallDetails.presentation.mvi
 
-import com.kogen.giraffe.ui.common.mvi.UiAction
+import com.kogen.androidarc.mvi.UiAction
 
 /** User-triggered intents on the REST call details screen. */
 internal sealed interface RestCallDetailsAction : UiAction {

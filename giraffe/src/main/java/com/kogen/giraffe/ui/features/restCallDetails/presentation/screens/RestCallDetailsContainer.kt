@@ -10,7 +10,7 @@ import com.kogen.giraffe.navigation.ActionToPdfPreview
 import com.kogen.giraffe.navigation.ActionToVideoPreview
 import com.kogen.giraffe.navigation.navigateSafety
 import com.kogen.giraffe.navigation.popBackSafety
-import com.kogen.giraffe.ui.common.ScreenContainerWrapper
+import com.kogen.androidarc.ui.ScreenContainerWrapper
 import com.kogen.giraffe.ui.features.restCallDetails.presentation.mvi.RestCallDetailsAction
 import com.kogen.giraffe.ui.features.restCallDetails.presentation.mvi.RestCallDetailsEffect
 import com.kogen.giraffe.ui.features.restCallDetails.presentation.mvi.RestCallDetailsViewModel

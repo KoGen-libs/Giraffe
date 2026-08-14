@@ -1,7 +1,7 @@
 package com.kogen.giraffe.ui.features.chatList.presentation.mvi
 
 import com.kogen.giraffe.ui.common.domain.models.GiraffeLogEntry
-import com.kogen.giraffe.ui.common.mvi.UiAction
+import com.kogen.androidarc.mvi.UiAction
 
 /** User-triggered intents on the unified call list screen. */
 internal sealed interface ChatListAction : UiAction {

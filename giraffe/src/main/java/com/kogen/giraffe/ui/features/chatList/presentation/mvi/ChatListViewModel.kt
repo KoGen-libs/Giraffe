@@ -2,7 +2,7 @@ package com.kogen.giraffe.ui.features.chatList.presentation.mvi
 
 import com.kogen.giraffe.ui.common.domain.models.GiraffeChatStatus
 import com.kogen.giraffe.ui.common.domain.models.GiraffeLogEntry
-import com.kogen.giraffe.ui.common.mvi.BaseMviViewModel
+import com.kogen.androidarc.mvi.BaseMviViewModel
 import com.kogen.giraffe.ui.features.chatList.domain.useCases.DeleteChatsByIdUseCase
 import com.kogen.giraffe.ui.features.chatList.domain.useCases.LoadChatListUseCase
 import com.kogen.giraffe.ui.features.restCallList.domain.useCases.DeleteRestCallsByIdUseCase

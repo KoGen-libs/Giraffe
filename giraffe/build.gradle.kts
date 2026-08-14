@@ -66,6 +66,7 @@ tasks.configureEach {
 }
 
 dependencies {
+    implementation(libs.androidarc)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core)
     implementation(libs.grpc.stub)
